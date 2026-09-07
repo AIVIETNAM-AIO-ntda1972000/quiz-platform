@@ -1,0 +1,14 @@
+node_modules/
+dist/
+coverage/
+playwright-report/
+test-results/
+.idea/
+.vscode/
+*.log
+*.tsbuildinfo
+vite.config.js
+vite.config.d.ts
+android/.gradle/
+android/local.properties
+android/app/build/
