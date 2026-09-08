@@ -1,0 +1,656 @@
+{
+  "schemaVersion": 1,
+  "quiz": {
+    "id": "decision-tree-practical-work-v1",
+    "title": "Decision Trees for Practical Work",
+    "description": "Fifty questions on decision-tree workflow, split criteria, implementation choices, common pitfalls, evaluation, and production use.",
+    "questions": [
+      {
+        "id": "q01",
+        "type": "singleChoice",
+        "prompt": "What does a supervised-learning model learn from a labeled dataset?",
+        "options": [
+          { "id": "a", "text": "A mapping from input features X to target y" },
+          { "id": "b", "text": "A list of rules that must be written manually before seeing data" },
+          { "id": "c", "text": "Only the average value of every feature" },
+          { "id": "d", "text": "A way to remove the target column" }
+        ],
+        "correctOptionId": "a",
+        "explanation": "Supervised learning uses examples containing both features X and target y to learn a mapping that can predict y for new inputs."
+      },
+      {
+        "id": "q02",
+        "type": "multipleChoice",
+        "prompt": "Which statements correctly distinguish classification from regression?",
+        "options": [
+          { "id": "a", "text": "Classification predicts a discrete category" },
+          { "id": "b", "text": "Regression predicts a continuous value" },
+          { "id": "c", "text": "A decision tree can be used for both tasks" },
+          { "id": "d", "text": "Regression always produces only True or False" }
+        ],
+        "correctOptionIds": ["a", "b", "c"],
+        "explanation": "Classification outputs class labels, regression outputs numeric values, and decision-tree variants support both tasks."
+      },
+      {
+        "id": "q03",
+        "type": "singleChoice",
+        "prompt": "Why is a decision tree often compared with an if-then-else program?",
+        "options": [
+          { "id": "a", "text": "Each internal condition sends a sample down a branch until a leaf returns an output" },
+          { "id": "b", "text": "It executes every branch for every sample" },
+          { "id": "c", "text": "It can only use Boolean input features" },
+          { "id": "d", "text": "Its rules must always be hand-written" }
+        ],
+        "correctOptionId": "a",
+        "explanation": "A tree evaluates conditions sequentially along one path, just like nested if-then-else rules, but training learns the rules from data."
+      },
+      {
+        "id": "q04",
+        "type": "multipleChoice",
+        "prompt": "Which roles are matched correctly to decision-tree node types?",
+        "options": [
+          { "id": "a", "text": "Root node: the first split applied to the data" },
+          { "id": "b", "text": "Internal node: a later condition that splits incoming samples" },
+          { "id": "c", "text": "Leaf node: a terminal node that returns a prediction" },
+          { "id": "d", "text": "Leaf node: any node that happens to be drawn on the lowest row" }
+        ],
+        "correctOptionIds": ["a", "b", "c"],
+        "explanation": "Node type is determined by function, not drawing position. A leaf has no outgoing split even if other branches continue deeper."
+      },
+      {
+        "id": "q05",
+        "type": "singleChoice",
+        "prompt": "A longest root-to-leaf path contains four nodes. What is the tree depth under the usual edge-counting definition?",
+        "options": [
+          { "id": "a", "text": "2" },
+          { "id": "b", "text": "3" },
+          { "id": "c", "text": "4" },
+          { "id": "d", "text": "5" }
+        ],
+        "correctOptionId": "b",
+        "explanation": "Depth counts edges, not nodes. Four nodes on the longest path are connected by three edges."
+      },
+      {
+        "id": "q06",
+        "type": "multipleChoice",
+        "prompt": "Which input-data types can a decision-tree problem contain?",
+        "options": [
+          { "id": "a", "text": "Numeric features such as age or humidity" },
+          { "id": "b", "text": "Categorical features such as weather type" },
+          { "id": "c", "text": "A mixture of numeric and categorical features" },
+          { "id": "d", "text": "Only features already scaled to the interval 0 to 1" }
+        ],
+        "correctOptionIds": ["a", "b", "c"],
+        "explanation": "Tree concepts support numeric, categorical, and mixed data. Exact preprocessing support depends on the chosen software implementation."
+      },
+      {
+        "id": "q07",
+        "type": "singleChoice",
+        "prompt": "What does it mean for a classification node to be pure?",
+        "options": [
+          { "id": "a", "text": "All samples in the node have the same class label" },
+          { "id": "b", "text": "All feature values have been normalized" },
+          { "id": "c", "text": "The node contains exactly two samples" },
+          { "id": "d", "text": "The node has equal numbers from every class" }
+        ],
+        "correctOptionId": "a",
+        "explanation": "Purity describes label consistency. A node containing only one class has no class uncertainty and needs no further split for classification."
+      },
+      {
+        "id": "q08",
+        "type": "singleChoice",
+        "prompt": "What does entropy measure inside a classification node?",
+        "options": [
+          { "id": "a", "text": "Uncertainty or class-label disorder" },
+          { "id": "b", "text": "The physical memory used by the model" },
+          { "id": "c", "text": "The number of input columns only" },
+          { "id": "d", "text": "The distance between feature vectors" }
+        ],
+        "correctOptionId": "a",
+        "explanation": "Entropy is the average information or uncertainty of the class distribution in a node."
+      },
+      {
+        "id": "q09",
+        "type": "singleChoice",
+        "prompt": "For a binary node, when is entropy maximal?",
+        "options": [
+          { "id": "a", "text": "When the two classes are present in equal proportions" },
+          { "id": "b", "text": "When every sample belongs to one class" },
+          { "id": "c", "text": "When the node has exactly one sample" },
+          { "id": "d", "text": "Whenever the positive class is more common" }
+        ],
+        "correctOptionId": "a",
+        "explanation": "A 50/50 binary node is maximally uncertain, giving entropy 1 with base-2 logarithms. Entropy approaches 0 as one class dominates completely."
+      },
+      {
+        "id": "q10",
+        "type": "shortText",
+        "prompt": "Using base-2 logarithms, what is the entropy of a pure classification node? Enter the numeric value.",
+        "acceptedAnswers": ["0", "0.0", "zero"],
+        "explanation": "A pure node has probability 1 for one class and 0 for the others, so its entropy is zero."
+      },
+      {
+        "id": "q11",
+        "type": "singleChoice",
+        "prompt": "A binary node contains 75% blue samples and 25% red samples. What is its Gini impurity?",
+        "options": [
+          { "id": "a", "text": "0" },
+          { "id": "b", "text": "0.125" },
+          { "id": "c", "text": "0.375" },
+          { "id": "d", "text": "0.5" }
+        ],
+        "correctOptionId": "c",
+        "explanation": "Gini = 1 - (0.75 squared + 0.25 squared) = 0.375."
+      },
+      {
+        "id": "q12",
+        "type": "singleChoice",
+        "prompt": "What is the Gini impurity of a binary node with a 50/50 class distribution?",
+        "options": [
+          { "id": "a", "text": "0" },
+          { "id": "b", "text": "0.25" },
+          { "id": "c", "text": "0.5" },
+          { "id": "d", "text": "1" }
+        ],
+        "correctOptionId": "c",
+        "explanation": "Gini = 1 - (0.5 squared + 0.5 squared) = 0.5, the maximum for two classes."
+      },
+      {
+        "id": "q13",
+        "type": "singleChoice",
+        "prompt": "Why must child impurities be weighted by child sample counts when evaluating a split?",
+        "options": [
+          { "id": "a", "text": "A tiny pure branch should not hide a large impure branch" },
+          { "id": "b", "text": "Weighting guarantees every leaf has the same size" },
+          { "id": "c", "text": "Weighting converts categories into numbers" },
+          { "id": "d", "text": "Weighting always makes the gain equal to one" }
+        ],
+        "correctOptionId": "a",
+        "explanation": "The split quality must reflect all samples. A pure branch holding only a few records may be outweighed by a large mixed branch."
+      },
+      {
+        "id": "q14",
+        "type": "singleChoice",
+        "prompt": "Which expression correctly describes impurity gain for a candidate split?",
+        "options": [
+          { "id": "a", "text": "Parent impurity minus the sample-weighted average child impurity" },
+          { "id": "b", "text": "Parent impurity plus the unweighted child impurities" },
+          { "id": "c", "text": "The number of children divided by the number of features" },
+          { "id": "d", "text": "Training accuracy minus test accuracy" }
+        ],
+        "correctOptionId": "a",
+        "explanation": "Information Gain and Gini Gain quantify how much a split reduces impurity relative to the parent node."
+      },
+      {
+        "id": "q15",
+        "type": "singleChoice",
+        "prompt": "At a node, candidate features have gains 0.226, 0.015, 0.151, and 0.048. Which should the greedy algorithm choose?",
+        "options": [
+          { "id": "a", "text": "The feature with gain 0.226" },
+          { "id": "b", "text": "The feature with gain 0.015" },
+          { "id": "c", "text": "The feature with gain closest to zero" },
+          { "id": "d", "text": "A random feature because all gains are positive" }
+        ],
+        "correctOptionId": "a",
+        "explanation": "The standard greedy rule selects the candidate with the largest immediate impurity reduction. In the Play Tennis example, this makes Outlook the root."
+      },
+      {
+        "id": "q16",
+        "type": "singleChoice",
+        "prompt": "Why is ordinary decision-tree training called greedy?",
+        "options": [
+          { "id": "a", "text": "It chooses the best local split at each node without globally searching every possible tree" },
+          { "id": "b", "text": "It always creates the deepest possible tree" },
+          { "id": "c", "text": "It uses every feature in every prediction" },
+          { "id": "d", "text": "It optimizes only inference speed" }
+        ],
+        "correctOptionId": "a",
+        "explanation": "Exhaustively comparing all complete trees is impractical, so common algorithms commit to the best split available at the current node."
+      },
+      {
+        "id": "q17",
+        "type": "multipleChoice",
+        "prompt": "For a numeric feature, which steps correctly generate the usual threshold candidates?",
+        "options": [
+          { "id": "a", "text": "Sort the distinct observed values" },
+          { "id": "b", "text": "Take midpoints between adjacent distinct values" },
+          { "id": "c", "text": "Evaluate the impurity reduction for each candidate" },
+          { "id": "d", "text": "Create additional thresholds between duplicate copies of the same value" }
+        ],
+        "correctOptionIds": ["a", "b", "c"],
+        "explanation": "Only adjacent distinct values create meaningful boundaries. Duplicate copies do not create a new partition."
+      },
+      {
+        "id": "q18",
+        "type": "singleChoice",
+        "prompt": "The distinct sorted delivery times are 10, 15, 20, and 28 minutes. Which threshold set should be evaluated?",
+        "options": [
+          { "id": "a", "text": "12.5, 17.5, and 24" },
+          { "id": "b", "text": "10, 15, 20, and 28" },
+          { "id": "c", "text": "5, 10, 15, and 20" },
+          { "id": "d", "text": "Only 19" }
+        ],
+        "correctOptionId": "a",
+        "explanation": "The candidates are the midpoints of consecutive distinct values: (10+15)/2, (15+20)/2, and (20+28)/2."
+      },
+      {
+        "id": "q19",
+        "type": "singleChoice",
+        "prompt": "In the delivery-time example, thresholds 12.5, 17.5, and 24 have Gini Gains 0.1000, 0.0556, and 0.2500. Which threshold is selected and why?",
+        "options": [
+          { "id": "a", "text": "24, because it has the largest Gini Gain" },
+          { "id": "b", "text": "17.5, because it is the middle threshold" },
+          { "id": "c", "text": "12.5, because smaller thresholds are preferred" },
+          { "id": "d", "text": "All three, because a numeric feature must create three children" }
+        ],
+        "correctOptionId": "a",
+        "explanation": "The selected threshold is the one that most reduces weighted impurity, not necessarily the numerical midpoint of the full range."
+      },
+      {
+        "id": "q20",
+        "type": "singleChoice",
+        "prompt": "What is the key split-structure difference emphasized between CART and ID3?",
+        "options": [
+          { "id": "a", "text": "CART uses binary splits, while ID3 can use multi-way splits" },
+          { "id": "b", "text": "CART only supports regression, while ID3 only supports clustering" },
+          { "id": "c", "text": "CART cannot split numeric features" },
+          { "id": "d", "text": "ID3 always produces a tree of depth one" }
+        ],
+        "correctOptionId": "a",
+        "explanation": "CART recursively creates two children. Classical ID3 can create one branch per categorical value."
+      },
+      {
+        "id": "q21",
+        "type": "multipleChoice",
+        "prompt": "A categorical feature has values Sunny, Overcast, and Rain. Which binary partitions must be considered to fully evaluate a CART-style split?",
+        "options": [
+          { "id": "a", "text": "Sunny versus {Overcast, Rain}" },
+          { "id": "b", "text": "Overcast versus {Sunny, Rain}" },
+          { "id": "c", "text": "Rain versus {Sunny, Overcast}" },
+          { "id": "d", "text": "Only the alphabetical partition" }
+        ],
+        "correctOptionIds": ["a", "b", "c"],
+        "explanation": "For three categories, these are the three unique non-trivial binary groupings. Missing one can hide the best split."
+      },
+      {
+        "id": "q22",
+        "type": "singleChoice",
+        "prompt": "Why can arbitrary integer encoding of a nominal category change the learned CART tree?",
+        "options": [
+          { "id": "a", "text": "Numeric thresholding only tests contiguous groups under the imposed integer order" },
+          { "id": "b", "text": "Integer encoding changes the target labels automatically" },
+          { "id": "c", "text": "Trees require every category to have a real physical distance" },
+          { "id": "d", "text": "The row order is always shuffled after encoding" }
+        ],
+        "correctOptionId": "a",
+        "explanation": "A nominal category has no natural order, but ordinal integers create one. Threshold splits may then miss a useful non-contiguous grouping."
+      },
+      {
+        "id": "q23",
+        "type": "multipleChoice",
+        "prompt": "Which are reasonable ways to avoid misleading ordinal structure for nominal features?",
+        "options": [
+          { "id": "a", "text": "Use an implementation with native categorical split support" },
+          { "id": "b", "text": "Use a carefully fitted one-hot encoder when appropriate" },
+          { "id": "c", "text": "Document and validate the effect of any encoding strategy" },
+          { "id": "d", "text": "Assign integers arbitrarily and assume the result is invariant" }
+        ],
+        "correctOptionIds": ["a", "b", "c"],
+        "explanation": "Encoding is part of the model. It must preserve the intended meaning and be fitted consistently inside the training pipeline."
+      },
+      {
+        "id": "q24",
+        "type": "singleChoice",
+        "prompt": "What is target leakage?",
+        "options": [
+          { "id": "a", "text": "Training with a feature that contains target information unavailable at prediction time" },
+          { "id": "b", "text": "Using a small max_depth" },
+          { "id": "c", "text": "Dropping a feature with many missing values" },
+          { "id": "d", "text": "Saving predictions to a file" }
+        ],
+        "correctOptionId": "a",
+        "explanation": "Leakage creates unrealistically strong validation results because the model receives information it would not have in real use."
+      },
+      {
+        "id": "q25",
+        "type": "singleChoice",
+        "prompt": "Why should preprocessing transformations be fitted using training data only?",
+        "options": [
+          { "id": "a", "text": "Fitting on validation or test data leaks information and makes evaluation optimistic" },
+          { "id": "b", "text": "Decision trees cannot accept transformed test data" },
+          { "id": "c", "text": "It guarantees 100% test accuracy" },
+          { "id": "d", "text": "It makes all features normally distributed" }
+        ],
+        "correctOptionId": "a",
+        "explanation": "Encoders, imputers, feature selection, and similar learned transformations should be fitted within a training-only pipeline."
+      },
+      {
+        "id": "q26",
+        "type": "singleChoice",
+        "prompt": "What is the safest role of a final test set?",
+        "options": [
+          { "id": "a", "text": "Estimate generalization once after model and hyperparameter choices are finalized" },
+          { "id": "b", "text": "Repeatedly choose max_depth until test accuracy is highest" },
+          { "id": "c", "text": "Train the final tree before validation" },
+          { "id": "d", "text": "Replace missing training labels" }
+        ],
+        "correctOptionId": "a",
+        "explanation": "Repeated test-set decisions overfit the test set. Use training and validation or cross-validation for selection, then test once."
+      },
+      {
+        "id": "q27",
+        "type": "multipleChoice",
+        "prompt": "For an imbalanced fraud-classification problem, which checks are more informative than accuracy alone?",
+        "options": [
+          { "id": "a", "text": "Precision and recall for the fraud class" },
+          { "id": "b", "text": "A confusion matrix" },
+          { "id": "c", "text": "PR-AUC or another metric suited to rare positives" },
+          { "id": "d", "text": "Only the depth printed by the tree" }
+        ],
+        "correctOptionIds": ["a", "b", "c"],
+        "explanation": "A majority-class predictor can have high accuracy while missing nearly all rare positives. Per-class and ranking metrics reveal that failure."
+      },
+      {
+        "id": "q28",
+        "type": "singleChoice",
+        "prompt": "False negatives are much more expensive than false positives. What should guide model selection?",
+        "options": [
+          { "id": "a", "text": "A metric or cost function reflecting that business asymmetry" },
+          { "id": "b", "text": "Training accuracy only" },
+          { "id": "c", "text": "The tree with the most leaves" },
+          { "id": "d", "text": "Alphabetical feature order" }
+        ],
+        "correctOptionId": "a",
+        "explanation": "The validation objective should represent real error costs. Class weights or decision-threshold choices may also be appropriate."
+      },
+      {
+        "id": "q29",
+        "type": "singleChoice",
+        "prompt": "A full-depth tree scores 1.00 on 10 training samples but 0.55 on 200 new samples. What is the most likely diagnosis?",
+        "options": [
+          { "id": "a", "text": "Overfitting" },
+          { "id": "b", "text": "Underfitting" },
+          { "id": "c", "text": "Perfect generalization" },
+          { "id": "d", "text": "A regression-only problem" }
+        ],
+        "correctOptionId": "a",
+        "explanation": "The large train-to-new-data performance gap suggests that the tree memorized training-specific patterns instead of generalizing."
+      },
+      {
+        "id": "q30",
+        "type": "multipleChoice",
+        "prompt": "Which observations are practical warning signs of an overfit decision tree?",
+        "options": [
+          { "id": "a", "text": "Very high training performance but much lower validation performance" },
+          { "id": "b", "text": "Deep branches ending in leaves with one or very few samples" },
+          { "id": "c", "text": "Rules that change greatly after a small change to the training data" },
+          { "id": "d", "text": "Training and validation errors are both high and similar" }
+        ],
+        "correctOptionIds": ["a", "b", "c"],
+        "explanation": "Tiny leaves and unstable deep rules often capture noise. High and similarly poor train/validation error is more consistent with underfitting."
+      },
+      {
+        "id": "q31",
+        "type": "singleChoice",
+        "prompt": "How does reducing max_depth usually help an overfit tree?",
+        "options": [
+          { "id": "a", "text": "It limits the number of sequential rules and reduces model complexity" },
+          { "id": "b", "text": "It adds more candidate features" },
+          { "id": "c", "text": "It forces every leaf to be pure" },
+          { "id": "d", "text": "It changes classification into regression" }
+        ],
+        "correctOptionId": "a",
+        "explanation": "A shallower tree has fewer opportunities to create narrow rules for noise, trading some training fit for better generalization."
+      },
+      {
+        "id": "q32",
+        "type": "singleChoice",
+        "prompt": "What practical behavior does increasing min_samples_leaf encourage?",
+        "options": [
+          { "id": "a", "text": "Each terminal rule must be supported by more training examples" },
+          { "id": "b", "text": "Every node must use more features" },
+          { "id": "c", "text": "The target is converted to a continuous value" },
+          { "id": "d", "text": "All missing values are deleted" }
+        ],
+        "correctOptionId": "a",
+        "explanation": "Requiring larger leaves prevents the model from creating special-case rules supported by only one or two records."
+      },
+      {
+        "id": "q33",
+        "type": "singleChoice",
+        "prompt": "What is the difference between min_samples_split and min_samples_leaf?",
+        "options": [
+          { "id": "a", "text": "The first controls whether a node may split; the second controls the minimum samples in each resulting leaf" },
+          { "id": "b", "text": "They are two names for exactly the same setting" },
+          { "id": "c", "text": "The first is for regression only and the second for classification only" },
+          { "id": "d", "text": "The first controls feature count and the second class count" }
+        ],
+        "correctOptionId": "a",
+        "explanation": "A node needs enough samples before splitting, and every permitted split must also respect the minimum leaf size."
+      },
+      {
+        "id": "q34",
+        "type": "singleChoice",
+        "prompt": "What is post-pruning intended to do?",
+        "options": [
+          { "id": "a", "text": "Remove weak branches from a grown tree to improve the complexity-versus-fit tradeoff" },
+          { "id": "b", "text": "Add every possible threshold after training" },
+          { "id": "c", "text": "Convert all leaves back into root nodes" },
+          { "id": "d", "text": "Guarantee that training accuracy increases" }
+        ],
+        "correctOptionId": "a",
+        "explanation": "Cost-complexity pruning, such as tuning ccp_alpha, accepts a small fit loss when it removes branches that may not generalize."
+      },
+      {
+        "id": "q35",
+        "type": "singleChoice",
+        "prompt": "How should max_depth, min_samples_leaf, or pruning strength normally be chosen?",
+        "options": [
+          { "id": "a", "text": "Compare candidates with validation data or cross-validation using the task metric" },
+          { "id": "b", "text": "Choose the setting with the highest training accuracy" },
+          { "id": "c", "text": "Always use the library default without checking" },
+          { "id": "d", "text": "Use the test set after every trial" }
+        ],
+        "correctOptionId": "a",
+        "explanation": "Hyperparameters should be selected on unseen validation folds with a metric tied to the real objective, while preserving the final test set."
+      },
+      {
+        "id": "q36",
+        "type": "singleChoice",
+        "prompt": "Why is standard feature scaling usually unnecessary for ordinary decision trees?",
+        "options": [
+          { "id": "a", "text": "Tree splits depend on ordering and thresholds, not Euclidean distance or gradient magnitude" },
+          { "id": "b", "text": "Trees can only use integer features" },
+          { "id": "c", "text": "Scaling would always remove missing values" },
+          { "id": "d", "text": "Scaling prevents classification" }
+        ],
+        "correctOptionId": "a",
+        "explanation": "A monotonic rescaling changes threshold numbers but normally preserves the ordering and possible partitions."
+      },
+      {
+        "id": "q37",
+        "type": "multipleChoice",
+        "prompt": "What should a robust workflow do about missing feature values?",
+        "options": [
+          { "id": "a", "text": "Measure how much is missing and whether the pattern is informative" },
+          { "id": "b", "text": "Use a model with supported missing-value handling or fit an imputer in the pipeline" },
+          { "id": "c", "text": "Apply the same learned handling at training and inference time" },
+          { "id": "d", "text": "Silently treat every missing value as zero without checking meaning" }
+        ],
+        "correctOptionIds": ["a", "b", "c"],
+        "explanation": "Missingness needs an explicit, repeatable policy. Zero may be a real value and is not a universally valid substitute."
+      },
+      {
+        "id": "q38",
+        "type": "singleChoice",
+        "prompt": "A new categorical value appears in production but was absent during training. What is the key requirement?",
+        "options": [
+          { "id": "a", "text": "The preprocessing pipeline must define a safe unknown-category behavior" },
+          { "id": "b", "text": "The model should map it to the target label" },
+          { "id": "c", "text": "The request must always be discarded" },
+          { "id": "d", "text": "The category should receive a random integer" }
+        ],
+        "correctOptionId": "a",
+        "explanation": "Production inputs evolve. Encoders should handle unknown values deterministically, and monitoring should surface their frequency."
+      },
+      {
+        "id": "q39",
+        "type": "singleChoice",
+        "prompt": "What value does a standard regression-tree leaf predict?",
+        "options": [
+          { "id": "a", "text": "The mean target of training samples in that leaf" },
+          { "id": "b", "text": "The nearest feature value" },
+          { "id": "c", "text": "The global maximum target" },
+          { "id": "d", "text": "A class probability only" }
+        ],
+        "correctOptionId": "a",
+        "explanation": "With squared-error regression, the leaf value that minimizes error is the mean of the targets reaching that leaf."
+      },
+      {
+        "id": "q40",
+        "type": "singleChoice",
+        "prompt": "When building a squared-error regression tree, what makes one candidate split better than another?",
+        "options": [
+          { "id": "a", "text": "It produces a lower sample-weighted child mean squared error" },
+          { "id": "b", "text": "It produces the largest number of classes" },
+          { "id": "c", "text": "It always splits at the mean feature value" },
+          { "id": "d", "text": "It gives both children the same prediction" }
+        ],
+        "correctOptionId": "a",
+        "explanation": "Regression splits seek child groups whose targets vary less around their respective leaf means."
+      },
+      {
+        "id": "q41",
+        "type": "singleChoice",
+        "prompt": "In the course salary example, predictions for 5.3 years at max_depth 1, max_depth 2, and unlimited depth are 77.2, 93.2, and 83.0. What explains the changes?",
+        "options": [
+          { "id": "a", "text": "Increasing depth creates smaller leaves, so the mean is computed from progressively fewer samples" },
+          { "id": "b", "text": "Increasing depth converts salary into a class label" },
+          { "id": "c", "text": "The closest feature value is always returned at every depth" },
+          { "id": "d", "text": "random_state changes the salary units" }
+        ],
+        "correctOptionId": "a",
+        "explanation": "A shallow leaf averages many salaries; deeper splits narrow the group. Unlimited depth can effectively memorize a nearby training region."
+      },
+      {
+        "id": "q42",
+        "type": "singleChoice",
+        "prompt": "To explain one tree prediction, what is the most direct evidence?",
+        "options": [
+          { "id": "a", "text": "The sequence of feature conditions followed from root to leaf" },
+          { "id": "b", "text": "The average depth of unrelated trees" },
+          { "id": "c", "text": "Every feature in the dataset, whether used or not" },
+          { "id": "d", "text": "The file name of the training data" }
+        ],
+        "correctOptionId": "a",
+        "explanation": "A single prediction uses only the features and thresholds on its path. An unused feature does not affect that particular output."
+      },
+      {
+        "id": "q43",
+        "type": "singleChoice",
+        "prompt": "A candidate has graduation score 21, no IELTS certificate, and minority bonus. The learned path checks score < 19, then IELTS, then score < 24, but never checks the bonus. Why does the bonus not affect this prediction?",
+        "options": [
+          { "id": "a", "text": "Only conditions on the traversed root-to-leaf path determine the output" },
+          { "id": "b", "text": "Categorical features can never affect decision trees" },
+          { "id": "c", "text": "The bonus is automatically added to the graduation score" },
+          { "id": "d", "text": "All unused features are treated as missing targets" }
+        ],
+        "correctOptionId": "a",
+        "explanation": "The sample follows False at score < 19, False for IELTS, and True at score < 24, reaching the not-admitted leaf. The bonus is not on that path."
+      },
+      {
+        "id": "q44",
+        "type": "multipleChoice",
+        "prompt": "Why should built-in impurity-based feature importance be interpreted cautiously?",
+        "options": [
+          { "id": "a", "text": "It summarizes use in this fitted model, not causality" },
+          { "id": "b", "text": "Correlated features can divide or substitute for one another's importance" },
+          { "id": "c", "text": "Features with many possible split points can receive biased importance" },
+          { "id": "d", "text": "It is guaranteed to equal permutation importance on unseen data" }
+        ],
+        "correctOptionIds": ["a", "b", "c"],
+        "explanation": "Impurity importance is convenient but model-specific and can be biased. Validate conclusions with domain knowledge and held-out methods such as permutation importance."
+      },
+      {
+        "id": "q45",
+        "type": "singleChoice",
+        "prompt": "Two strongly correlated features provide nearly the same signal. What can happen in a fitted tree?",
+        "options": [
+          { "id": "a", "text": "The tree may select one and make the other appear unimportant even though both are predictive" },
+          { "id": "b", "text": "Both must appear at every node" },
+          { "id": "c", "text": "The tree automatically proves that one causes the target" },
+          { "id": "d", "text": "Correlation prevents any split from being created" }
+        ],
+        "correctOptionId": "a",
+        "explanation": "Once one correlated feature captures the gain, the other may add little extra impurity reduction. Importance is therefore not a complete statement about usefulness."
+      },
+      {
+        "id": "q46",
+        "type": "singleChoice",
+        "prompt": "What probability does a classification-tree leaf commonly report for a class?",
+        "options": [
+          { "id": "a", "text": "The fraction of training samples in that leaf belonging to the class" },
+          { "id": "b", "text": "The global training accuracy" },
+          { "id": "c", "text": "The number of features used by the tree" },
+          { "id": "d", "text": "A guaranteed perfectly calibrated probability" }
+        ],
+        "correctOptionId": "a",
+        "explanation": "Leaf class proportions provide a probability estimate, but small leaves and overfitting can make it poorly calibrated."
+      },
+      {
+        "id": "q47",
+        "type": "multipleChoice",
+        "prompt": "Which practices help when a single decision tree is unstable across small data changes?",
+        "options": [
+          { "id": "a", "text": "Use cross-validation to measure variability" },
+          { "id": "b", "text": "Regularize the tree with depth or leaf-size constraints" },
+          { "id": "c", "text": "Consider an ensemble such as a random forest or gradient-boosted trees" },
+          { "id": "d", "text": "Judge stability only from training accuracy" }
+        ],
+        "correctOptionIds": ["a", "b", "c"],
+        "explanation": "Trees have high variance. Validation reveals it, regularization reduces it, and ensembles average or correct multiple trees to improve stability."
+      },
+      {
+        "id": "q48",
+        "type": "singleChoice",
+        "prompt": "What does setting random_state mainly provide in a decision-tree experiment?",
+        "options": [
+          { "id": "a", "text": "Reproducibility for randomized choices or tie behavior used by the implementation" },
+          { "id": "b", "text": "Protection against target leakage" },
+          { "id": "c", "text": "A guarantee of the globally optimal tree" },
+          { "id": "d", "text": "Automatic handling of unseen categories" }
+        ],
+        "correctOptionId": "a",
+        "explanation": "A fixed seed helps reproduce a run, but it does not repair weak evaluation, leakage, encoding mistakes, or overfitting."
+      },
+      {
+        "id": "q49",
+        "type": "multipleChoice",
+        "prompt": "Which sequence describes a sound practical decision-tree workflow?",
+        "options": [
+          { "id": "a", "text": "Define the target, prediction time, and business metric" },
+          { "id": "b", "text": "Split data appropriately, then fit preprocessing and models on training data" },
+          { "id": "c", "text": "Tune complexity on validation data and inspect errors and rules" },
+          { "id": "d", "text": "Use the final test set repeatedly while choosing features" },
+          { "id": "e", "text": "Freeze the pipeline, evaluate once on test data, and monitor after deployment" }
+        ],
+        "correctOptionIds": ["a", "b", "c", "e"],
+        "explanation": "The order protects against leakage and test overfitting while keeping model choices tied to the actual decision and operating conditions."
+      },
+      {
+        "id": "q50",
+        "type": "multipleChoice",
+        "prompt": "After deploying a decision tree, what should be monitored?",
+        "options": [
+          { "id": "a", "text": "Input drift, missing values, and unseen-category rates" },
+          { "id": "b", "text": "Prediction and business performance once labels become available" },
+          { "id": "c", "text": "Performance by important user or risk groups" },
+          { "id": "d", "text": "Whether the production preprocessing contract still matches training" },
+          { "id": "e", "text": "Only whether the service returns HTTP 200" }
+        ],
+        "correctOptionIds": ["a", "b", "c", "d"],
+        "explanation": "Service uptime is necessary but not sufficient. Data quality, drift, subgroup behavior, and delayed outcome quality determine whether the model remains useful and safe."
+      }
+    ]
+  }
+}

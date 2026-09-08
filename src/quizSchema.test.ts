@@ -1,9 +1,15 @@
 import { describe, expect, it } from "vitest";
+import decisionTreeQuiz from "../sample-quizzes/decision-tree-practical-work.json";
 import vietnameseAiQuiz from "../sample-quizzes/kien-thuc-ai-co-ban.json";
 import { exampleQuizFile } from "./exampleQuiz";
 import { parseQuizJson, validateQuizFile } from "./quizSchema";
 
 describe("quiz validation", () => {
+  it("accepts the included practical decision-tree quiz", () => {
+    expect(decisionTreeQuiz.quiz.questions).toHaveLength(50);
+    expect(validateQuizFile(decisionTreeQuiz).success).toBe(true);
+  });
+
   it("accepts the included Vietnamese AI quiz", () => {
     expect(validateQuizFile(vietnameseAiQuiz).success).toBe(true);
   });
