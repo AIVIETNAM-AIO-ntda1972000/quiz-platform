@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "quiz": {
+    "id": "kien-thuc-ai-co-ban-v1",
+    "title": "Kiến thức AI cơ bản",
+    "description": "Sáu câu hỏi ngắn giúp ôn lại các khái niệm nền tảng về trí tuệ nhân tạo.",
+    "questions": [
+      {
+        "id": "q1",
+        "type": "singleChoice",
+        "prompt": "AI là viết tắt của cụm từ tiếng Anh nào?",
+        "options": [
+          { "id": "a", "text": "Automated Information" },
+          { "id": "b", "text": "Artificial Intelligence" },
+          { "id": "c", "text": "Advanced Internet" },
+          { "id": "d", "text": "Applied Innovation" }
+        ],
+        "correctOptionId": "b",
+        "explanation": "AI là viết tắt của Artificial Intelligence, tiếng Việt là trí tuệ nhân tạo."
+      },
+      {
+        "id": "q2",
+        "type": "multipleChoice",
+        "prompt": "Những ứng dụng nào thường sử dụng AI?",
+        "options": [
+          { "id": "a", "text": "Nhận dạng giọng nói" },
+          { "id": "b", "text": "Gợi ý phim theo sở thích" },
+          { "id": "c", "text": "Thước kẻ thông thường" },
+          { "id": "d", "text": "Phát hiện thư rác" }
+        ],
+        "correctOptionIds": ["a", "b", "d"],
+        "explanation": "Nhận dạng giọng nói, hệ thống gợi ý và phát hiện thư rác đều có thể dùng mô hình AI."
+      },
+      {
+        "id": "q3",
+        "type": "shortText",
+        "prompt": "Dữ liệu dùng để dạy một mô hình máy học thường được gọi là gì?",
+        "acceptedAnswers": [
+          "dữ liệu huấn luyện",
+          "training data"
+        ],
+        "explanation": "Dữ liệu huấn luyện là tập dữ liệu mà mô hình sử dụng để học các mẫu và mối quan hệ."
+      },
+      {
+        "id": "q4",
+        "type": "singleChoice",
+        "prompt": "Overfitting xảy ra khi nào?",
+        "options": [
+          { "id": "a", "text": "Mô hình hoạt động tốt trên dữ liệu huấn luyện nhưng kém trên dữ liệu mới" },
+          { "id": "b", "text": "Mô hình không được cung cấp bất kỳ dữ liệu nào" },
+          { "id": "c", "text": "Máy tính hết pin" },
+          { "id": "d", "text": "Dữ liệu được lưu thành file JSON" }
+        ],
+        "correctOptionId": "a",
+        "explanation": "Overfitting nghĩa là mô hình ghi nhớ dữ liệu huấn luyện quá mức và khái quát hóa kém."
+      },
+      {
+        "id": "q5",
+        "type": "multipleChoice",
+        "prompt": "Khi sử dụng AI có trách nhiệm, chúng ta nên chú ý những điều nào?",
+        "options": [
+          { "id": "a", "text": "Bảo vệ dữ liệu cá nhân" },
+          { "id": "b", "text": "Kiểm tra độ chính xác của kết quả" },
+          { "id": "c", "text": "Tin mọi câu trả lời của AI mà không kiểm tra" },
+          { "id": "d", "text": "Xem xét khả năng thiên lệch của mô hình" }
+        ],
+        "correctOptionIds": ["a", "b", "d"],
+        "explanation": "Quyền riêng tư, độ chính xác và thiên lệch là ba vấn đề quan trọng khi sử dụng AI."
+      },
+      {
+        "id": "q6",
+        "type": "shortText",
+        "prompt": "Loại AI có thể tạo ra văn bản, hình ảnh hoặc âm thanh mới được gọi là gì?",
+        "acceptedAnswers": [
+          "AI tạo sinh",
+          "trí tuệ nhân tạo tạo sinh",
+          "generative AI"
+        ],
+        "explanation": "AI tạo sinh, hay Generative AI, tạo nội dung mới dựa trên những mẫu đã học."
+      }
+    ]
+  }
+}

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { exampleQuizFile } from "./exampleQuiz";
-import { clearQuizProgress, loadAttempt, loadQuizzes, loadResult, saveAttempt, saveQuiz, saveResult } from "./storage";
+import { clearQuizProgress, deleteQuiz, initializeQuizLibrary, loadAttempt, loadQuizzes, loadResult, saveAttempt, saveQuiz, saveResult } from "./storage";
 
 describe("local persistence", () => {
   beforeEach(() => localStorage.clear());
@@ -20,5 +20,16 @@ describe("local persistence", () => {
     clearQuizProgress("basic-math");
     expect(loadAttempt("basic-math")).toBeUndefined();
     expect(loadResult("basic-math")).toBeUndefined();
+  });
+
+  it("deletes a quiz and does not restore the starter quiz after reload", () => {
+    initializeQuizLibrary(exampleQuizFile.quiz);
+    saveAttempt({ quizId: "basic-math", answers: {}, currentIndex: 0, updatedAt: "now" });
+    saveResult({ quizId: "basic-math", answers: {}, correct: 0, total: 3, completedAt: "now" });
+    deleteQuiz("basic-math");
+    expect(loadQuizzes()).toEqual([]);
+    expect(loadAttempt("basic-math")).toBeUndefined();
+    expect(loadResult("basic-math")).toBeUndefined();
+    expect(initializeQuizLibrary(exampleQuizFile.quiz)).toEqual([]);
   });
 });

@@ -57,6 +57,19 @@ describe("Quiz Platform", () => {
     expect(screen.getByText("Question 2 of 3")).toBeInTheDocument();
   });
 
+  it("searches and deletes quizzes with confirmation", async () => {
+    const user = userEvent.setup();
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    render(<App />);
+    await user.type(screen.getByRole("searchbox", { name: "Search quizzes" }), "missing");
+    expect(screen.getByText("No quizzes match your search.")).toBeInTheDocument();
+    await user.clear(screen.getByRole("searchbox", { name: "Search quizzes" }));
+    await user.click(screen.getByRole("button", { name: "Delete Basic Mathematics" }));
+    expect(window.confirm).toHaveBeenCalled();
+    expect(screen.getByText("Your library is empty.")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Basic Mathematics" })).not.toBeInTheDocument();
+  });
+
   it("registers WebMCP tools and imports through the same app action", async () => {
     const tools: Array<{ name: string; execute(input: unknown): unknown }> = [];
     Object.defineProperty(document, "modelContext", { configurable: true, value: { registerTool: (tool: typeof tools[number]) => tools.push(tool) } });

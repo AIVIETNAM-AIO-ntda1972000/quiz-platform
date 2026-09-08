@@ -1,8 +1,13 @@
 import { describe, expect, it } from "vitest";
+import vietnameseAiQuiz from "../sample-quizzes/kien-thuc-ai-co-ban.json";
 import { exampleQuizFile } from "./exampleQuiz";
 import { parseQuizJson, validateQuizFile } from "./quizSchema";
 
 describe("quiz validation", () => {
+  it("accepts the included Vietnamese AI quiz", () => {
+    expect(validateQuizFile(vietnameseAiQuiz).success).toBe(true);
+  });
+
   it("accepts the example quiz", () => {
     expect(validateQuizFile(exampleQuizFile).success).toBe(true);
   });

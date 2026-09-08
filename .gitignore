@@ -7,6 +7,8 @@ test-results/
 .vscode/
 *.log
 *.tsbuildinfo
+.env
+.env.local
 vite.config.js
 vite.config.d.ts
 android/.gradle/

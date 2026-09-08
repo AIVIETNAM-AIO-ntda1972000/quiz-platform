@@ -1,18 +1,16 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { isCloudConfigured, useCloudSync } from "./cloudSync";
 import { exampleQuizFile } from "./exampleQuiz";
 import { gradeQuiz, isCorrect } from "./grading";
 import type { Answer, Attempt, Question, Quiz, QuizFile, QuizResult } from "./models";
 import { parseQuizJson } from "./quizSchema";
-import { clearAttempt, clearQuizProgress, loadAttempt, loadQuizzes, loadResult, saveAttempt, saveQuiz, saveResult } from "./storage";
+import { clearAttempt, clearQuizProgress, deleteQuiz, initializeQuizLibrary, loadAttempt, loadQuizzes, loadResult, saveAttempt, saveQuiz, saveResult } from "./storage";
 import { useWebMcp } from "./webMcp";
 
-type Screen = "library" | "import" | "attempt" | "results";
+type Screen = "library" | "import" | "attempt" | "results" | "account";
 
 function initialQuizzes(): Quiz[] {
-  const stored = loadQuizzes();
-  if (stored.length) return stored;
-  saveQuiz(exampleQuizFile.quiz);
-  return [exampleQuizFile.quiz];
+  return initializeQuizLibrary(exampleQuizFile.quiz);
 }
 
 function hasAnswer(answer: Answer | undefined): boolean {
@@ -40,7 +38,19 @@ export default function App() {
   const [result, setResult] = useState<QuizResult>();
   const [importErrors, setImportErrors] = useState<string[]>([]);
   const [notice, setNotice] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const headingRef = useRef<HTMLHeadingElement>(null);
+
+  const refreshLibrary = useCallback(() => setQuizzes(loadQuizzes()), []);
+  const cloud = useCloudSync(refreshLibrary);
+  const filteredQuizzes = useMemo(() => {
+    const query = searchQuery.normalize("NFKC").trim().toLocaleLowerCase();
+    if (!query) return quizzes;
+    return quizzes.filter((quiz) => [quiz.title, quiz.description, quiz.id]
+      .some((value) => value?.normalize("NFKC").toLocaleLowerCase().includes(query)));
+  }, [quizzes, searchQuery]);
 
   useEffect(() => { headingRef.current?.focus(); }, [screen, attempt?.currentIndex]);
 
@@ -49,10 +59,10 @@ export default function App() {
     if (exists && !replace) throw new Error("A quiz with this id already exists.");
     if (exists) clearQuizProgress(file.quiz.id);
     saveQuiz(file.quiz);
-    setQuizzes(loadQuizzes());
+    refreshLibrary();
     setNotice(`${file.quiz.title} was ${exists ? "replaced" : "imported"}.`);
     setScreen("library");
-  }, []);
+  }, [refreshLibrary]);
 
   useWebMcp(quizzes, importValidatedQuiz);
 
@@ -111,13 +121,30 @@ export default function App() {
     importValidatedQuiz(validation.data, exists);
   };
 
+  const handleDeleteQuiz = (quiz: Quiz) => {
+    if (!window.confirm(`Delete “${quiz.title}” and all of its saved progress?`)) return;
+    deleteQuiz(quiz.id);
+    refreshLibrary();
+    setNotice(`${quiz.title} was deleted.`);
+  };
+
+  const handleSignIn = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (await cloud.signIn(email.trim(), password)) setPassword("");
+  };
+
   return (
     <div className="app-shell">
       <header className="topbar">
         <button className="brand" type="button" onClick={goHome} aria-label="Quiz Platform home">
           <span className="brand-mark">Q</span><span>Quiz Platform</span>
         </button>
-        <span className="offline-pill"><span className="status-dot" /> Offline ready</span>
+        <div className="topbar-actions">
+          <span className="offline-pill"><span className="status-dot" /> Offline ready</span>
+          <button className="sync-button" type="button" onClick={() => setScreen("account")}>
+            {cloud.user ? `Sync: ${cloud.status}` : "Cloud sync"}
+          </button>
+        </div>
       </header>
 
       {screen === "library" && (
@@ -131,8 +158,21 @@ export default function App() {
             <button className="primary-button" type="button" onClick={() => setScreen("import")}>Import quiz</button>
           </section>
           {notice && <div className="notice" role="status">✓ {notice}</div>}
+          <div className="library-tools">
+            <label className="search-box">
+              <span aria-hidden="true">⌕</span>
+              <span className="sr-only">Search quizzes</span>
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Search by title, description, or ID"
+              />
+            </label>
+            <span>{filteredQuizzes.length} of {quizzes.length} quizzes</span>
+          </div>
           <section className="quiz-list" aria-label="Your quizzes">
-            {quizzes.map((quiz, index) => {
+            {filteredQuizzes.map((quiz, index) => {
               const saved = loadAttempt(quiz.id);
               const latest = loadResult(quiz.id);
               return (
@@ -147,13 +187,62 @@ export default function App() {
                       <span>{saved ? `${saved.currentIndex + 1} of ${quiz.questions.length}` : latest ? `${latest.correct}/${latest.total} correct` : "Not started"}</span>
                     </div>
                   </div>
-                  <button className="arrow-button" type="button" onClick={() => startQuiz(quiz)} aria-label={`${saved ? "Resume" : "Start"} ${quiz.title}`}>
-                    <span>{saved ? "Resume" : "Start"}</span><b aria-hidden="true">→</b>
-                  </button>
+                  <div className="card-actions">
+                    <button className="arrow-button" type="button" onClick={() => startQuiz(quiz)} aria-label={`${saved ? "Resume" : "Start"} ${quiz.title}`}>
+                      <span>{saved ? "Resume" : "Start"}</span><b aria-hidden="true">→</b>
+                    </button>
+                    <button className="delete-button" type="button" onClick={() => handleDeleteQuiz(quiz)} aria-label={`Delete ${quiz.title}`}>Delete</button>
+                  </div>
                 </article>
               );
             })}
+            {filteredQuizzes.length === 0 && (
+              <div className="empty-state">
+                <strong>{quizzes.length ? "No quizzes match your search." : "Your library is empty."}</strong>
+                <span>{quizzes.length ? "Try a different keyword." : "Import a JSON quiz to get started."}</span>
+              </div>
+            )}
           </section>
+        </main>
+      )}
+
+      {screen === "account" && (
+        <main className="narrow-page">
+          <button className="back-link" type="button" onClick={goHome}>← Back to library</button>
+          <p className="eyebrow">CROSS-DEVICE SYNC</p>
+          <h1 ref={headingRef} tabIndex={-1}>Cloud sync</h1>
+          {!isCloudConfigured ? (
+            <div className="account-panel">
+              <h2>Supabase setup required</h2>
+              <p>Add the Supabase project URL and anonymous key to the app environment. Your quizzes remain safely available on this device until cloud sync is configured.</p>
+              <code>VITE_SUPABASE_URL</code>
+              <code>VITE_SUPABASE_ANON_KEY</code>
+            </div>
+          ) : cloud.user ? (
+            <div className="account-panel">
+              <h2>Signed in</h2>
+              <p>{cloud.user.email}</p>
+              <div className={`sync-status ${cloud.status}`} role="status">{cloud.message}</div>
+              <div className="account-actions">
+                <button className="primary-button" type="button" onClick={() => void cloud.syncNow()}>Sync now</button>
+                <button className="secondary-button" type="button" onClick={() => void cloud.signOut()}>Sign out</button>
+              </div>
+            </div>
+          ) : (
+            <form className="account-panel" onSubmit={(event) => void handleSignIn(event)}>
+              <h2>Sign in on every device</h2>
+              <p>Use the same account on your phone and computer. Offline changes stay local and sync after reconnecting.</p>
+              <label>Email<input type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} /></label>
+              <label>Password<input type="password" autoComplete="current-password" minLength={6} required value={password} onChange={(event) => setPassword(event.target.value)} /></label>
+              <div className={`sync-status ${cloud.status}`} role="status">{cloud.message}</div>
+              <div className="account-actions">
+                <button className="primary-button" type="submit">Sign in</button>
+                <button className="secondary-button" type="button" onClick={(event) => {
+                  if (event.currentTarget.form?.reportValidity()) void cloud.signUp(email.trim(), password);
+                }}>Create account</button>
+              </div>
+            </form>
+          )}
         </main>
       )}
 
