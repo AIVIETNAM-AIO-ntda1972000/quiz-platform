@@ -6,6 +6,39 @@ export const exampleQuizFile: QuizFile = {
     id: "basic-math",
     title: "Basic Mathematics",
     description: "Three quick questions to try every answer type.",
+    learningMaterial: {
+      title: "A Quick Guide to the Quiz Concepts",
+      summary: "Review addition, even numbers, and capital cities before trying the example quiz.",
+      sections: [
+        {
+          id: "addition",
+          title: "Addition combines quantities",
+          paragraphs: ["Addition finds the total after quantities are combined. For example, two objects plus two more objects produce four objects."],
+          illustration: {
+            type: "flow",
+            title: "A simple addition process",
+            items: [
+              { label: "Start", detail: "2 objects" },
+              { label: "Add", detail: "2 more objects" },
+              { label: "Total", detail: "4 objects" }
+            ]
+          }
+        },
+        {
+          id: "even-numbers",
+          title: "Even numbers divide into equal pairs",
+          paragraphs: ["An even integer is divisible by two with no remainder. Two and four are even, while three is odd."],
+          illustration: {
+            type: "comparison",
+            title: "Even and odd",
+            items: [
+              { label: "Even", detail: "2 and 4 divide evenly by two.", highlight: true },
+              { label: "Odd", detail: "3 leaves a remainder after division by two." }
+            ]
+          }
+        }
+      ]
+    },
     questions: [
       {
         id: "q1",

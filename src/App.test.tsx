@@ -20,11 +20,30 @@ describe("Quiz Platform", () => {
 
     const valid = {
       schemaVersion: 1,
-      quiz: { id: "science", title: "Science", questions: [{ id: "q1", type: "shortText", prompt: "Planet?", acceptedAnswers: ["Earth"] }] }
+      quiz: {
+        id: "science",
+        title: "Science",
+        learningMaterial: {
+          title: "Science essentials",
+          sections: [{
+            id: "method",
+            title: "The scientific method",
+            paragraphs: ["Test explanations against evidence."],
+            illustration: {
+              type: "flow",
+              items: [{ label: "Question" }, { label: "Experiment" }, { label: "Evidence" }]
+            }
+          }]
+        },
+        questions: [{ id: "q1", type: "shortText", prompt: "Planet?", acceptedAnswers: ["Earth"] }]
+      }
     };
     await user.upload(input, new File([JSON.stringify(valid)], "science.json", { type: "application/json" }));
     expect(await screen.findByText("Science")).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("imported");
+    await user.click(screen.getByRole("button", { name: "Study Science" }));
+    expect(screen.getByRole("heading", { name: "Science essentials" })).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Flow diagram" })).toHaveTextContent("Experiment");
   });
 
   it("completes a quiz, reviews results, and retries", async () => {

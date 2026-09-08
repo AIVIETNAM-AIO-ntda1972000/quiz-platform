@@ -1,6 +1,6 @@
 # Quiz Platform
 
-A small, offline-first quiz app for the web and Android. Import AI-generated JSON quizzes, search or delete them, answer one question at a time, leave and resume, then review your score and explanations. Data stays on the current device by default, with optional Supabase account sync.
+A small, offline-first quiz app for the web and Android. Import AI-generated JSON quizzes with optional illustrated study guides, search or delete them, answer one question at a time, leave and resume, then review your score and explanations. Data stays on the current device by default, with optional Supabase account sync.
 
 ## Run locally
 
@@ -20,6 +20,8 @@ Run unit and component tests with `npm test`, create a production build with `np
 3. Open Quiz Platform, choose **Import quiz**, and select the file.
 
 The importer validates the complete file before saving it. The exact versioned contract is documented in [`docs/JSON_FORMAT.md`](docs/JSON_FORMAT.md), with a ready-to-import example at [`public/examples/basic-math.json`](public/examples/basic-math.json).
+
+A quiz may include `learningMaterial` with explanatory sections, key points, and structured `flow`, `comparison`, or `distribution` illustrations. The guide is imported and synced with the quiz and remains available offline.
 
 Additional ready-to-import quiz files are kept in [`sample-quizzes`](sample-quizzes), including a Vietnamese introduction to AI.
 

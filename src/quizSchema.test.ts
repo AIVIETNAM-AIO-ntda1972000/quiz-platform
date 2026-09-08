@@ -7,7 +7,16 @@ import { parseQuizJson, validateQuizFile } from "./quizSchema";
 describe("quiz validation", () => {
   it("accepts the included practical decision-tree quiz", () => {
     expect(decisionTreeQuiz.quiz.questions).toHaveLength(50);
+    expect(decisionTreeQuiz.quiz.learningMaterial?.sections).toHaveLength(6);
     expect(validateQuizFile(decisionTreeQuiz).success).toBe(true);
+  });
+
+  it("rejects duplicate learning section ids", () => {
+    const invalid = structuredClone(decisionTreeQuiz);
+    invalid.quiz.learningMaterial!.sections[1].id = invalid.quiz.learningMaterial!.sections[0].id;
+    const result = validateQuizFile(invalid);
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.errors.some((error) => error.includes("Duplicate learning section id"))).toBe(true);
   });
 
   it("accepts the included Vietnamese AI quiz", () => {

@@ -4,6 +4,157 @@
     "id": "decision-tree-practical-work-v1",
     "title": "Decision Trees for Practical Work",
     "description": "Fifty questions on decision-tree workflow, split criteria, implementation choices, common pitfalls, evaluation, and production use.",
+    "learningMaterial": {
+      "title": "Decision Trees: From Node Impurity to Reliable Models",
+      "summary": "A visual study guide explaining how a tree chooses splits, why tiny leaves overfit, and how pruning supports practical generalization.",
+      "sections": [
+        {
+          "id": "prediction-path",
+          "title": "A prediction follows one path",
+          "paragraphs": [
+            "The root node applies the first condition, internal nodes apply later conditions, and a leaf returns the final class, probability, or regression value.",
+            "One prediction only depends on features used along its root-to-leaf path. A leaf is defined by having no outgoing split, not by being drawn on the lowest row."
+          ],
+          "keyPoints": [
+            "Root: first split",
+            "Internal node: later split",
+            "Leaf: terminal prediction",
+            "Depth counts edges on the longest root-to-leaf path"
+          ],
+          "illustration": {
+            "type": "flow",
+            "title": "One sample moving through a tree",
+            "items": [
+              { "label": "Root", "detail": "Age less than or equal to 30?" },
+              { "label": "Internal node", "detail": "Income less than or equal to 50?" },
+              { "label": "Leaf", "detail": "Predict Yes" }
+            ]
+          }
+        },
+        {
+          "id": "impurity",
+          "title": "Impurity measures class mixture inside a node",
+          "paragraphs": [
+            "A sample normally has one target label. Impurity describes how mixed the labels are across all samples currently inside one node.",
+            "For Gini impurity, G(S) = 1 - sum of squared class probabilities. A pure node has Gini 0, while a balanced binary node has the maximum Gini value 0.5. Entropy expresses the same uncertainty idea with logarithms."
+          ],
+          "keyPoints": [
+            "Impurity belongs to a group of samples inside a node",
+            "Lower impurity means the node is easier to classify",
+            "Pure does not automatically mean reliable when the node contains very few samples"
+          ],
+          "illustration": {
+            "type": "distribution",
+            "title": "Class distributions and binary Gini impurity",
+            "groups": [
+              {
+                "label": "Pure",
+                "note": "Gini = 0",
+                "segments": [{ "label": "Yes", "count": 8 }]
+              },
+              {
+                "label": "Mostly pure",
+                "note": "Gini = 0.375",
+                "segments": [{ "label": "Yes", "count": 6 }, { "label": "No", "count": 2 }]
+              },
+              {
+                "label": "Most mixed",
+                "note": "Gini = 0.5",
+                "segments": [{ "label": "Yes", "count": 4 }, { "label": "No", "count": 4 }]
+              }
+            ]
+          }
+        },
+        {
+          "id": "choose-split",
+          "title": "Choose the largest weighted impurity reduction",
+          "paragraphs": [
+            "For each candidate feature and threshold, split the samples, calculate every child impurity, and weight each child by its sample count.",
+            "Gain equals parent impurity minus weighted child impurity. The greedy tree chooses the candidate with the largest gain at the current node. Weighting matters because a tiny pure child should not hide a large impure child."
+          ],
+          "keyPoints": [
+            "Generate candidate feature and threshold pairs",
+            "Partition the samples into children",
+            "Calculate sample-weighted child impurity",
+            "Select the highest positive gain and repeat recursively"
+          ],
+          "illustration": {
+            "type": "comparison",
+            "title": "Two splits from a parent with Gini 0.50",
+            "items": [
+              { "label": "Candidate A", "detail": "Children 2-0 and 3-5. Weighted Gini 0.375, so gain is 0.125." },
+              { "label": "Candidate B - choose", "detail": "Children 4-1 and 1-4. Weighted Gini 0.320, so gain is 0.180.", "highlight": true }
+            ]
+          }
+        },
+        {
+          "id": "numeric-and-categorical",
+          "title": "Generate valid candidate splits",
+          "paragraphs": [
+            "For a numeric feature, sort the distinct observed values and test midpoints between adjacent values. Duplicate values do not create additional thresholds.",
+            "For nominal categories, arbitrary integer encoding can impose a false order. CART may then test only contiguous groups under that order and miss the best category partition. Use supported categorical handling or a validated encoding pipeline."
+          ],
+          "illustration": {
+            "type": "flow",
+            "title": "Numeric threshold search",
+            "items": [
+              { "label": "Sort distinct values", "detail": "10, 15, 20, 28" },
+              { "label": "Create midpoints", "detail": "12.5, 17.5, 24" },
+              { "label": "Measure every split", "detail": "Compute weighted impurity" },
+              { "label": "Choose", "detail": "Keep the threshold with maximum gain" }
+            ]
+          }
+        },
+        {
+          "id": "leaf-size-and-pruning",
+          "title": "Control complexity with leaf size and pruning",
+          "paragraphs": [
+            "With min_samples_leaf=5, a candidate split is valid only when both resulting children contain at least five training samples. This prevents rules supported by only one or two unusual records.",
+            "Pre-pruning blocks excessive growth during training with limits such as max_depth, min_samples_leaf, and min_impurity_decrease. Post-pruning grows a larger tree and then removes weak subtrees, commonly using cost-complexity pruning controlled by ccp_alpha."
+          ],
+          "keyPoints": [
+            "A 15-and-5 split satisfies min_samples_leaf=5",
+            "An 18-and-2 split violates min_samples_leaf=5",
+            "Stronger regularization can reduce overfitting but may cause underfitting",
+            "Choose pruning settings with validation or cross-validation"
+          ],
+          "illustration": {
+            "type": "comparison",
+            "title": "Two times to control tree growth",
+            "items": [
+              { "label": "Pre-pruning", "detail": "Stop an invalid or weak split before its branch grows." },
+              { "label": "Post-pruning", "detail": "Grow candidate branches first, then replace weak subtrees with leaves." }
+            ]
+          }
+        },
+        {
+          "id": "practical-workflow",
+          "title": "A practical modeling workflow",
+          "paragraphs": [
+            "Reliable evaluation begins before the model is trained. Define the prediction moment and metric, protect a final test set, and fit preprocessing only on training data.",
+            "Tune tree complexity on validation data, inspect errors and leaf sample counts, evaluate once on the final test set, and monitor input drift and real outcomes after deployment."
+          ],
+          "keyPoints": [
+            "Avoid target leakage and repeated decisions based on the test set",
+            "Use class-aware metrics for imbalanced targets",
+            "Do not treat impurity-based feature importance as proof of causality",
+            "Monitor missing values, unseen categories, subgroup behavior, and delayed labels"
+          ],
+          "illustration": {
+            "type": "flow",
+            "title": "End-to-end workflow",
+            "items": [
+              { "label": "Frame", "detail": "Target, prediction time, costs" },
+              { "label": "Split", "detail": "Train, validation, final test" },
+              { "label": "Prepare", "detail": "Fit preprocessing on training data" },
+              { "label": "Train", "detail": "Inspect paths and leaf sizes" },
+              { "label": "Tune", "detail": "Cross-validate complexity" },
+              { "label": "Monitor", "detail": "Drift and real outcomes" }
+            ]
+          }
+        }
+      ]
+    },
     "questions": [
       {
         "id": "q01",

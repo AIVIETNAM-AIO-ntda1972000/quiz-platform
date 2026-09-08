@@ -2,12 +2,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { isCloudConfigured, useCloudSync } from "./cloudSync";
 import { exampleQuizFile } from "./exampleQuiz";
 import { gradeQuiz, isCorrect } from "./grading";
+import { LearningGuide } from "./LearningGuide";
 import type { Answer, Attempt, Question, Quiz, QuizFile, QuizResult } from "./models";
 import { parseQuizJson } from "./quizSchema";
 import { clearAttempt, clearQuizProgress, deleteQuiz, initializeQuizLibrary, loadAttempt, loadQuizzes, loadResult, saveAttempt, saveQuiz, saveResult } from "./storage";
 import { useWebMcp } from "./webMcp";
 
-type Screen = "library" | "import" | "attempt" | "results" | "account";
+type Screen = "library" | "import" | "attempt" | "results" | "account" | "learn";
 
 function initialQuizzes(): Quiz[] {
   return initializeQuizLibrary(exampleQuizFile.quiz);
@@ -79,6 +80,11 @@ export default function App() {
     setActiveQuiz(quiz);
     setAttempt(nextAttempt);
     setScreen("attempt");
+  };
+
+  const openLearningMaterial = (quiz: Quiz) => {
+    setActiveQuiz(quiz);
+    setScreen("learn");
   };
 
   const updateAnswer = (questionId: string, answer: Answer) => {
@@ -153,7 +159,7 @@ export default function App() {
             <div>
               <p className="eyebrow">YOUR QUIZ LIBRARY</p>
               <h1 ref={headingRef} tabIndex={-1}>What will you learn today?</h1>
-              <p>Import an AI-generated quiz, practise at your pace, and keep your progress on this device.</p>
+              <p>Import an AI-generated quiz with an optional study guide, practise at your pace, and keep your progress on this device.</p>
             </div>
             <button className="primary-button" type="button" onClick={() => setScreen("import")}>Import quiz</button>
           </section>
@@ -188,6 +194,9 @@ export default function App() {
                     </div>
                   </div>
                   <div className="card-actions">
+                    {quiz.learningMaterial && (
+                      <button className="study-button" type="button" onClick={() => openLearningMaterial(quiz)} aria-label={`Study ${quiz.title}`}>Study guide</button>
+                    )}
                     <button className="arrow-button" type="button" onClick={() => startQuiz(quiz)} aria-label={`${saved ? "Resume" : "Start"} ${quiz.title}`}>
                       <span>{saved ? "Resume" : "Start"}</span><b aria-hidden="true">→</b>
                     </button>
@@ -204,6 +213,10 @@ export default function App() {
             )}
           </section>
         </main>
+      )}
+
+      {screen === "learn" && activeQuiz?.learningMaterial && (
+        <LearningGuide material={activeQuiz.learningMaterial} quizTitle={activeQuiz.title} onBack={goHome} />
       )}
 
       {screen === "account" && (
@@ -255,7 +268,7 @@ export default function App() {
           <label className="file-drop">
             <span className="upload-icon" aria-hidden="true">↑</span>
             <strong>Choose a JSON file</strong>
-            <span>One quiz per file · processed locally</span>
+            <span>One quiz and optional study guide per file · processed locally</span>
             <input aria-label="Choose a JSON file" type="file" accept="application/json,.json" onChange={(event) => { void handleFile(event.target.files?.[0]); event.currentTarget.value = ""; }} />
           </label>
           {importErrors.length > 0 && (

@@ -25,15 +25,70 @@ const shortTextSchema = z.object({
   acceptedAnswers: z.array(nonEmptyText).min(1, "Add at least one accepted answer")
 }).strict();
 
+const illustrationItemSchema = z.object({
+  label: nonEmptyText,
+  detail: nonEmptyText.optional()
+}).strict();
+
+const learningIllustrationSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("flow"),
+    title: nonEmptyText.optional(),
+    items: z.array(illustrationItemSchema).min(2, "Add at least two flow items").max(8, "Use at most eight flow items")
+  }).strict(),
+  z.object({
+    type: z.literal("comparison"),
+    title: nonEmptyText.optional(),
+    items: z.array(z.object({
+      label: nonEmptyText,
+      detail: nonEmptyText,
+      highlight: z.boolean().optional()
+    }).strict()).min(2, "Add at least two comparison items").max(6, "Use at most six comparison items")
+  }).strict(),
+  z.object({
+    type: z.literal("distribution"),
+    title: nonEmptyText.optional(),
+    groups: z.array(z.object({
+      label: nonEmptyText,
+      note: nonEmptyText.optional(),
+      segments: z.array(z.object({
+        label: nonEmptyText,
+        count: z.number().int().positive().max(1000000)
+      }).strict()).min(1, "Add at least one distribution segment").max(6, "Use at most six distribution segments")
+    }).strict()).min(2, "Add at least two distribution groups").max(6, "Use at most six distribution groups")
+  }).strict()
+]);
+
+const learningMaterialSchema = z.object({
+  title: nonEmptyText,
+  summary: nonEmptyText.optional(),
+  sections: z.array(z.object({
+    id: nonEmptyText,
+    title: nonEmptyText,
+    paragraphs: z.array(nonEmptyText).min(1, "Add at least one paragraph").max(8, "Use at most eight paragraphs"),
+    keyPoints: z.array(nonEmptyText).min(1).max(10).optional(),
+    illustration: learningIllustrationSchema.optional()
+  }).strict()).min(1, "Add at least one learning section").max(30, "Use at most thirty learning sections")
+}).strict();
+
 export const quizFileSchema = z.object({
   schemaVersion: z.literal(1, { error: "Only schemaVersion 1 is supported" }),
   quiz: z.object({
     id: nonEmptyText,
     title: nonEmptyText,
     description: nonEmptyText.optional(),
+    learningMaterial: learningMaterialSchema.optional(),
     questions: z.array(z.discriminatedUnion("type", [singleChoiceSchema, multipleChoiceSchema, shortTextSchema])).min(1, "Add at least one question")
   }).strict()
 }).strict().superRefine((data, context) => {
+  const sectionIds = new Set<string>();
+  data.quiz.learningMaterial?.sections.forEach((section, sectionIndex) => {
+    if (sectionIds.has(section.id)) {
+      context.addIssue({ code: "custom", path: ["quiz", "learningMaterial", "sections", sectionIndex, "id"], message: `Duplicate learning section id: ${section.id}` });
+    }
+    sectionIds.add(section.id);
+  });
+
   const questionIds = new Set<string>();
   data.quiz.questions.forEach((question, questionIndex) => {
     if (questionIds.has(question.id)) {
