@@ -229,7 +229,7 @@ export default function App() {
               <h2>Supabase setup required</h2>
               <p>Add the Supabase project URL and anonymous key to the app environment. Your quizzes remain safely available on this device until cloud sync is configured.</p>
               <code>VITE_SUPABASE_URL</code>
-              <code>VITE_SUPABASE_ANON_KEY</code>
+              <code>VITE_SUPABASE_PUBLISHABLE_KEY</code>
             </div>
           ) : cloud.user ? (
             <div className="account-panel">

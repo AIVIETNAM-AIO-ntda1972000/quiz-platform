@@ -10,12 +10,13 @@ import {
 } from "./storage";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim();
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim();
+const supabaseKey = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
+  ?? import.meta.env.VITE_SUPABASE_ANON_KEY)?.trim();
 
-export const isCloudConfigured = Boolean(supabaseUrl && supabaseAnonKey);
+export const isCloudConfigured = Boolean(supabaseUrl && supabaseKey);
 
 const supabase = isCloudConfigured
-  ? createClient(supabaseUrl, supabaseAnonKey, {
+  ? createClient(supabaseUrl, supabaseKey, {
     auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
   })
   : undefined;

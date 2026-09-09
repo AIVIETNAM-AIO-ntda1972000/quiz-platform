@@ -35,11 +35,11 @@ Cloud sync lets the same account access quizzes and progress on the web and Andr
 
 1. Create a Supabase project and open its SQL Editor.
 2. Run [`supabase/schema.sql`](supabase/schema.sql). This creates one private data row per user and enables Row Level Security.
-3. Copy `.env.example` to `.env.local`, then enter the project URL and anonymous key.
-4. For GitHub Pages and APK builds, add repository Actions secrets named `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
+3. Copy `.env.example` to `.env.local`, then enter the project URL and publishable key.
+4. For GitHub Pages and APK builds, add repository Actions secrets named `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`.
 5. In Supabase Authentication, enable Email authentication. For the simplest personal setup, either disable email confirmation or confirm the signup email before signing in.
 
-The anonymous key is designed for frontend use when Row Level Security is enabled. Never add the Supabase service-role key to this repository or a frontend environment variable.
+The publishable key is designed for frontend use when Row Level Security is enabled. Never add the Supabase service-role key to this repository or a frontend environment variable.
 
 ## Android app
 
