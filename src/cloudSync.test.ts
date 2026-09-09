@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mergeStorageSnapshots, normalizeUsername, usernameToAuthEmail } from "./cloudSync";
+import { mergeStorageSnapshots, normalizeUsername, storageSnapshotsEqual, usernameToAuthEmail } from "./cloudSync";
 import { exampleQuizFile } from "./exampleQuiz";
 import type { StorageSnapshot } from "./storage";
 
@@ -42,6 +42,19 @@ describe("cloud snapshot merge", () => {
     const merged = mergeStorageSnapshots(local, remote);
     expect(merged.quizzes).toEqual([]);
     expect(merged.deletedQuizAt["basic-math"]).toBe("2026-01-05T00:00:00.000Z");
+  });
+
+  it("treats snapshots with differently ordered object keys as equal", () => {
+    const left = snapshot({
+      quizUpdatedAt: { alpha: "2026-01-02T00:00:00.000Z", beta: "2026-01-03T00:00:00.000Z" },
+      deletedQuizAt: { gamma: "2026-01-04T00:00:00.000Z", delta: "2026-01-05T00:00:00.000Z" },
+    });
+    const right = snapshot({
+      quizUpdatedAt: { beta: "2026-01-03T00:00:00.000Z", alpha: "2026-01-02T00:00:00.000Z" },
+      deletedQuizAt: { delta: "2026-01-05T00:00:00.000Z", gamma: "2026-01-04T00:00:00.000Z" },
+    });
+
+    expect(storageSnapshotsEqual(left, right)).toBe(true);
   });
 });
 

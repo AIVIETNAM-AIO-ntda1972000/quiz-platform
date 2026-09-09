@@ -45,6 +45,24 @@ export function usernameToAuthEmail(value: string): string {
   return `${normalizeUsername(value)}@users.quiz-platform.invalid`;
 }
 
+function stableSerialize(value: unknown): string {
+  const canonicalize = (item: unknown): unknown => {
+    if (Array.isArray(item)) return item.map(canonicalize);
+    if (item && typeof item === "object") {
+      return Object.fromEntries(Object.entries(item)
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(([key, child]) => [key, canonicalize(child)]));
+    }
+    return item;
+  };
+
+  return JSON.stringify(canonicalize(value));
+}
+
+export function storageSnapshotsEqual(left: StorageSnapshot, right: StorageSnapshot): boolean {
+  return stableSerialize(left) === stableSerialize(right);
+}
+
 function timestamp(value: string | undefined): number {
   const parsed = Date.parse(value ?? "");
   return Number.isFinite(parsed) ? parsed : 0;
@@ -136,6 +154,9 @@ export function useCloudSync(onCloudData: () => void): CloudSyncState {
   const [message, setMessage] = useState(isCloudConfigured ? "Sign in to sync across devices." : "Cloud sync is not configured.");
   const userRef = useRef<User | undefined>(undefined);
   const pushTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const lastPushedSnapshot = useRef<string | undefined>(undefined);
+  const syncPromise = useRef<Promise<void> | undefined>(undefined);
+  const syncRequested = useRef(false);
 
   const pushSnapshot = useCallback(async (activeUser: User) => {
     if (!supabase) return;
@@ -145,12 +166,16 @@ export function useCloudSync(onCloudData: () => void): CloudSyncState {
       return;
     }
     setStatus("syncing");
+    const snapshot = exportStorageSnapshot();
+    const snapshotSignature = stableSerialize(snapshot);
+    lastPushedSnapshot.current = snapshotSignature;
     const { error } = await supabase.from("quiz_platform_data").upsert({
       user_id: activeUser.id,
-      data: exportStorageSnapshot(),
+      data: snapshot,
       updated_at: new Date().toISOString(),
     });
     if (error) {
+      if (lastPushedSnapshot.current === snapshotSignature) lastPushedSnapshot.current = undefined;
       setStatus("error");
       setMessage(error.message);
       return;
@@ -160,40 +185,58 @@ export function useCloudSync(onCloudData: () => void): CloudSyncState {
   }, []);
 
   const syncNow = useCallback(async () => {
-    const activeUser = userRef.current;
-    if (!supabase || !activeUser) return;
-    if (!navigator.onLine) {
-      setStatus("offline");
-      setMessage("You are offline. Local changes will sync after reconnecting.");
-      return;
-    }
-    setStatus("syncing");
-    const { data, error } = await supabase
-      .from("quiz_platform_data")
-      .select("data")
-      .eq("user_id", activeUser.id)
-      .maybeSingle();
-    if (error) {
-      setStatus("error");
-      setMessage(error.message);
+    if (syncPromise.current) {
+      syncRequested.current = true;
+      await syncPromise.current;
       return;
     }
 
-    const remote = parseSnapshot(data?.data);
-    if (!remote) {
-      await pushSnapshot(activeUser);
-      return;
-    }
-    const local = exportStorageSnapshot();
-    const merged = mergeStorageSnapshots(local, remote);
-    if (JSON.stringify(merged) !== JSON.stringify(local)) {
-      importStorageSnapshot(merged, "cloud");
-      onCloudData();
-    }
-    if (JSON.stringify(merged) !== JSON.stringify(remote)) await pushSnapshot(activeUser);
-    else {
-      setStatus("synced");
-      setMessage("All changes are synced.");
+    const operation = (async () => {
+      do {
+        syncRequested.current = false;
+        const activeUser = userRef.current;
+        if (!supabase || !activeUser) return;
+        if (!navigator.onLine) {
+          setStatus("offline");
+          setMessage("You are offline. Local changes will sync after reconnecting.");
+          return;
+        }
+        setStatus("syncing");
+        const { data, error } = await supabase
+          .from("quiz_platform_data")
+          .select("data")
+          .eq("user_id", activeUser.id)
+          .maybeSingle();
+        if (error) {
+          setStatus("error");
+          setMessage(error.message);
+          return;
+        }
+
+        const remote = parseSnapshot(data?.data);
+        if (!remote) {
+          await pushSnapshot(activeUser);
+          continue;
+        }
+        const local = exportStorageSnapshot();
+        const merged = mergeStorageSnapshots(local, remote);
+        if (!storageSnapshotsEqual(merged, local)) {
+          importStorageSnapshot(merged, "cloud");
+          onCloudData();
+        }
+        if (!storageSnapshotsEqual(merged, remote)) await pushSnapshot(activeUser);
+        else {
+          setStatus("synced");
+          setMessage("All changes are synced.");
+        }
+      } while (syncRequested.current);
+    })();
+
+    syncPromise.current = operation;
+    try {
+      await operation;
+    } finally {
+      if (syncPromise.current === operation) syncPromise.current = undefined;
     }
   }, [onCloudData, pushSnapshot]);
 
@@ -222,11 +265,17 @@ export function useCloudSync(onCloudData: () => void): CloudSyncState {
     };
   }, [syncNow]);
 
-  useEffect(() => subscribeToStorageChanges((source) => {
-    if (source === "cloud" || !userRef.current) return;
-    clearTimeout(pushTimer.current);
-    pushTimer.current = setTimeout(() => void pushSnapshot(userRef.current!), 450);
-  }), [pushSnapshot]);
+  useEffect(() => {
+    const unsubscribe = subscribeToStorageChanges((source) => {
+      if (source === "cloud" || !userRef.current) return;
+      clearTimeout(pushTimer.current);
+      pushTimer.current = setTimeout(() => void syncNow(), 450);
+    });
+    return () => {
+      clearTimeout(pushTimer.current);
+      unsubscribe();
+    };
+  }, [syncNow]);
 
   useEffect(() => {
     const handleOnline = () => void syncNow();
@@ -238,7 +287,11 @@ export function useCloudSync(onCloudData: () => void): CloudSyncState {
     if (!supabase || !user) return;
     const channel = supabase
       .channel(`quiz-platform-${user.id}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "quiz_platform_data", filter: `user_id=eq.${user.id}` }, () => void syncNow())
+      .on("postgres_changes", { event: "*", schema: "public", table: "quiz_platform_data", filter: `user_id=eq.${user.id}` }, (payload) => {
+        const remoteSnapshot = (payload.new as { data?: unknown }).data;
+        if (remoteSnapshot && stableSerialize(remoteSnapshot) === lastPushedSnapshot.current) return;
+        void syncNow();
+      })
       .subscribe();
     return () => { void supabase.removeChannel(channel); };
   }, [syncNow, user]);
