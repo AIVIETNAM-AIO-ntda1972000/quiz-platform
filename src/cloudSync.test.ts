@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mergeStorageSnapshots } from "./cloudSync";
+import { mergeStorageSnapshots, normalizeUsername, usernameToAuthEmail } from "./cloudSync";
 import { exampleQuizFile } from "./exampleQuiz";
 import type { StorageSnapshot } from "./storage";
 
@@ -42,5 +42,18 @@ describe("cloud snapshot merge", () => {
     const merged = mergeStorageSnapshots(local, remote);
     expect(merged.quizzes).toEqual([]);
     expect(merged.deletedQuizAt["basic-math"]).toBe("2026-01-05T00:00:00.000Z");
+  });
+});
+
+describe("username authentication", () => {
+  it("normalizes a username into the internal Supabase email", () => {
+    expect(normalizeUsername("  Duy.Anh_07 ")).toBe("duy.anh_07");
+    expect(usernameToAuthEmail("Duy.Anh_07")).toBe("duy.anh_07@users.quiz-platform.invalid");
+  });
+
+  it("rejects usernames that cannot safely become an auth identity", () => {
+    expect(() => normalizeUsername("ab")).toThrow();
+    expect(() => normalizeUsername("duy anh")).toThrow();
+    expect(() => normalizeUsername("tên-tiếng-việt")).toThrow();
   });
 });

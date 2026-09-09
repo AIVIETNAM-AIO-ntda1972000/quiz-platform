@@ -40,7 +40,7 @@ export default function App() {
   const [importErrors, setImportErrors] = useState<string[]>([]);
   const [notice, setNotice] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const headingRef = useRef<HTMLHeadingElement>(null);
 
@@ -136,7 +136,7 @@ export default function App() {
 
   const handleSignIn = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (await cloud.signIn(email.trim(), password)) setPassword("");
+    if (await cloud.signIn(username, password)) setPassword("");
   };
 
   return (
@@ -234,7 +234,7 @@ export default function App() {
           ) : cloud.user ? (
             <div className="account-panel">
               <h2>Signed in</h2>
-              <p>{cloud.user.email}</p>
+              <p>{String(cloud.user.user_metadata.username ?? "Quiz user")}</p>
               <div className={`sync-status ${cloud.status}`} role="status">{cloud.message}</div>
               <div className="account-actions">
                 <button className="primary-button" type="button" onClick={() => void cloud.syncNow()}>Sync now</button>
@@ -244,14 +244,14 @@ export default function App() {
           ) : (
             <form className="account-panel" onSubmit={(event) => void handleSignIn(event)}>
               <h2>Sign in on every device</h2>
-              <p>Use the same account on your phone and computer. Offline changes stay local and sync after reconnecting.</p>
-              <label>Email<input type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} /></label>
+              <p>Use the same username and password on your phone and computer. No email address is required.</p>
+              <label>Username<input type="text" autoComplete="username" minLength={3} maxLength={32} pattern="[A-Za-z0-9][A-Za-z0-9._-]{2,31}" required value={username} onChange={(event) => setUsername(event.target.value)} /></label>
               <label>Password<input type="password" autoComplete="current-password" minLength={6} required value={password} onChange={(event) => setPassword(event.target.value)} /></label>
               <div className={`sync-status ${cloud.status}`} role="status">{cloud.message}</div>
               <div className="account-actions">
                 <button className="primary-button" type="submit">Sign in</button>
                 <button className="secondary-button" type="button" onClick={(event) => {
-                  if (event.currentTarget.form?.reportValidity()) void cloud.signUp(email.trim(), password);
+                  if (event.currentTarget.form?.reportValidity()) void cloud.signUp(username, password);
                 }}>Create account</button>
               </div>
             </form>

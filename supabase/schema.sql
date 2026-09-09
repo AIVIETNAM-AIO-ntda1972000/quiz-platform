@@ -6,22 +6,28 @@ create table if not exists public.quiz_platform_data (
 
 alter table public.quiz_platform_data enable row level security;
 
+revoke all on table public.quiz_platform_data from anon, authenticated;
+grant select, insert, update on table public.quiz_platform_data to authenticated;
+
 drop policy if exists "Users can read their own quiz data" on public.quiz_platform_data;
 create policy "Users can read their own quiz data"
 on public.quiz_platform_data
 for select
+to authenticated
 using (auth.uid() = user_id);
 
 drop policy if exists "Users can insert their own quiz data" on public.quiz_platform_data;
 create policy "Users can insert their own quiz data"
 on public.quiz_platform_data
 for insert
+to authenticated
 with check (auth.uid() = user_id);
 
 drop policy if exists "Users can update their own quiz data" on public.quiz_platform_data;
 create policy "Users can update their own quiz data"
 on public.quiz_platform_data
 for update
+to authenticated
 using (auth.uid() = user_id)
 with check (auth.uid() = user_id);
 

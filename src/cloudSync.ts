@@ -27,11 +27,23 @@ type CloudSyncState = {
   user?: User;
   status: SyncStatus;
   message: string;
-  signIn: (email: string, password: string) => Promise<boolean>;
-  signUp: (email: string, password: string) => Promise<boolean>;
+  signIn: (username: string, password: string) => Promise<boolean>;
+  signUp: (username: string, password: string) => Promise<boolean>;
   signOut: () => Promise<void>;
   syncNow: () => Promise<void>;
 };
+
+export function normalizeUsername(value: string): string {
+  const username = value.normalize("NFKC").trim().toLowerCase();
+  if (!/^[a-z0-9][a-z0-9._-]{2,31}$/.test(username)) {
+    throw new Error("Username must be 3–32 characters and use only letters, numbers, dot, dash, or underscore.");
+  }
+  return username;
+}
+
+export function usernameToAuthEmail(value: string): string {
+  return `${normalizeUsername(value)}@users.quiz-platform.invalid`;
+}
 
 function timestamp(value: string | undefined): number {
   const parsed = Date.parse(value ?? "");
@@ -231,9 +243,17 @@ export function useCloudSync(onCloudData: () => void): CloudSyncState {
     return () => { void supabase.removeChannel(channel); };
   }, [syncNow, user]);
 
-  const signIn = async (email: string, password: string): Promise<boolean> => {
+  const signIn = async (username: string, password: string): Promise<boolean> => {
     if (!supabase) return false;
     setStatus("syncing");
+    let email: string;
+    try {
+      email = usernameToAuthEmail(username);
+    } catch (error) {
+      setStatus("error");
+      setMessage(error instanceof Error ? error.message : "Invalid username.");
+      return false;
+    }
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       setStatus("error");
@@ -243,10 +263,22 @@ export function useCloudSync(onCloudData: () => void): CloudSyncState {
     return true;
   };
 
-  const signUp = async (email: string, password: string): Promise<boolean> => {
+  const signUp = async (username: string, password: string): Promise<boolean> => {
     if (!supabase) return false;
     setStatus("syncing");
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    let normalizedUsername: string;
+    try {
+      normalizedUsername = normalizeUsername(username);
+    } catch (error) {
+      setStatus("error");
+      setMessage(error instanceof Error ? error.message : "Invalid username.");
+      return false;
+    }
+    const { data, error } = await supabase.auth.signUp({
+      email: usernameToAuthEmail(normalizedUsername),
+      password,
+      options: { data: { username: normalizedUsername } },
+    });
     if (error) {
       setStatus("error");
       setMessage(error.message);
@@ -254,7 +286,7 @@ export function useCloudSync(onCloudData: () => void): CloudSyncState {
     }
     if (!data.session) {
       setStatus("signedOut");
-      setMessage("Check your email to confirm the account, then sign in.");
+      setMessage("Account created, but Supabase email confirmation is still enabled. Disable Confirm email, then create the account again.");
     }
     return true;
   };

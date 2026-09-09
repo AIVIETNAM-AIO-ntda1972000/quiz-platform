@@ -37,9 +37,11 @@ Cloud sync lets the same account access quizzes and progress on the web and Andr
 2. Run [`supabase/schema.sql`](supabase/schema.sql). This creates one private data row per user and enables Row Level Security.
 3. Copy `.env.example` to `.env.local`, then enter the project URL and publishable key.
 4. For GitHub Pages and APK builds, add repository Actions secrets named `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`.
-5. In Supabase Authentication, enable Email authentication. For the simplest personal setup, either disable email confirmation or confirm the signup email before signing in.
+5. In Supabase Authentication, enable the Email provider and disable **Confirm email**. The app derives an internal, non-deliverable auth address from each username, so users only enter a username and password.
 
 The publishable key is designed for frontend use when Row Level Security is enabled. Never add the Supabase service-role key to this repository or a frontend environment variable.
+
+Usernames are case-insensitive, contain 3–32 ASCII letters, numbers, dots, dashes, or underscores, and cannot be recovered by email. Administrators should provide a separate account-recovery process before using this beyond a personal or classroom deployment.
 
 ## Android app
 
