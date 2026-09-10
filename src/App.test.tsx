@@ -6,8 +6,27 @@ import App from "./App";
 describe("Quiz Platform", () => {
   beforeEach(() => {
     localStorage.clear();
+    document.documentElement.removeAttribute("data-theme");
+    document.documentElement.style.removeProperty("color-scheme");
+    document.head.innerHTML = '<meta name="theme-color" content="#171c5b">';
     vi.restoreAllMocks();
     Object.defineProperty(document, "modelContext", { configurable: true, value: undefined });
+  });
+
+  it("applies and remembers a manually selected theme", async () => {
+    localStorage.setItem("quiz-platform:theme", "dark");
+    const user = userEvent.setup();
+    render(<App />);
+
+    expect(document.documentElement).toHaveAttribute("data-theme", "dark");
+    const toggle = screen.getByRole("button", { name: "Switch to light mode" });
+    toggle.focus();
+    await user.keyboard("[Enter]");
+
+    expect(document.documentElement).toHaveAttribute("data-theme", "light");
+    expect(localStorage.getItem("quiz-platform:theme")).toBe("light");
+    expect(screen.getByRole("button", { name: "Switch to dark mode" })).toBeInTheDocument();
+    expect(document.querySelector('meta[name="theme-color"]')).toHaveAttribute("content", "#171c5b");
   });
 
   it("imports a valid quiz and reports invalid files", async () => {

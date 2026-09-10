@@ -24,6 +24,20 @@ const importedQuiz = {
   }
 };
 
+test("follows the system theme and remembers a manual override", async ({ page }) => {
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.goto("/");
+
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute("content", "#0b1026");
+  await page.getByRole("button", { name: "Switch to light mode" }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+
+  await page.reload();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  await expect(page.getByRole("button", { name: "Switch to dark mode" })).toBeVisible();
+});
+
 test("imports, completes, reloads, and starts offline", async ({ page, context }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Import quiz" }).click();

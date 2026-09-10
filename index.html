@@ -9,6 +9,19 @@
     <link rel="icon" href="%BASE_URL%icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="%BASE_URL%apple-touch-icon-180x180.png" />
     <title>Quiz Platform</title>
+    <script>
+      (() => {
+        let theme;
+        try {
+          const savedTheme = localStorage.getItem("quiz-platform:theme");
+          if (savedTheme === "light" || savedTheme === "dark") theme = savedTheme;
+        } catch {}
+        if (!theme) theme = window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.style.colorScheme = theme;
+        document.querySelector('meta[name="theme-color"]')?.setAttribute("content", theme === "dark" ? "#0b1026" : "#171c5b");
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

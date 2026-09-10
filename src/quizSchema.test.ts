@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import downloadableExample from "../public/examples/basic-math.json";
 import decisionTreeQuiz from "../sample-quizzes/decision-tree-practical-work.json";
 import vietnameseAiQuiz from "../sample-quizzes/kien-thuc-ai-co-ban.json";
 import { exampleQuizFile } from "./exampleQuiz";
@@ -25,6 +26,21 @@ describe("quiz validation", () => {
 
   it("accepts the example quiz", () => {
     expect(validateQuizFile(exampleQuizFile).success).toBe(true);
+  });
+
+  it("keeps the downloadable example complete and synchronized", () => {
+    expect(validateQuizFile(downloadableExample).success).toBe(true);
+    expect(downloadableExample).toEqual(exampleQuizFile);
+    expect(downloadableExample.quiz.questions.map((question) => question.type)).toEqual([
+      "singleChoice",
+      "multipleChoice",
+      "shortText"
+    ]);
+    expect(downloadableExample.quiz.learningMaterial.sections.map((section) => section.illustration?.type)).toEqual([
+      "flow",
+      "comparison",
+      "distribution"
+    ]);
   });
 
   it("returns a useful error for invalid JSON", () => {

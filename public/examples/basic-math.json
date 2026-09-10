@@ -34,6 +34,34 @@
               { "label": "Odd", "detail": "3 leaves a remainder after division by two." }
             ]
           }
+        },
+        {
+          "id": "capital-cities",
+          "title": "A capital city is a country's government center",
+          "paragraphs": ["A capital city is the official center of national government. It may also be the largest city, but size alone does not determine capital status."],
+          "keyPoints": ["Paris is the capital of France.", "Use official status rather than city size when answering."],
+          "illustration": {
+            "type": "distribution",
+            "title": "Cities in two small example sets",
+            "groups": [
+              {
+                "label": "France",
+                "note": "Paris is the capital",
+                "segments": [
+                  { "label": "Capital", "count": 1 },
+                  { "label": "Other example cities", "count": 2 }
+                ]
+              },
+              {
+                "label": "Germany",
+                "note": "Berlin is the capital",
+                "segments": [
+                  { "label": "Capital", "count": 1 },
+                  { "label": "Other example cities", "count": 2 }
+                ]
+              }
+            ]
+          }
         }
       ]
     },

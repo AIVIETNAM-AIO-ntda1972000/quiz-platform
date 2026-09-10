@@ -6,6 +6,7 @@ import { LearningGuide } from "./LearningGuide";
 import type { Answer, Attempt, Question, Quiz, QuizFile, QuizResult } from "./models";
 import { parseQuizJson } from "./quizSchema";
 import { clearAttempt, clearQuizProgress, deleteQuiz, initializeQuizLibrary, loadAttempt, loadQuizzes, loadResult, saveAttempt, saveQuiz, saveResult } from "./storage";
+import { applyTheme, getSavedTheme, getThemeMediaQuery, resolveTheme, saveThemePreference, type Theme } from "./theme";
 import { useWebMcp } from "./webMcp";
 
 type Screen = "library" | "import" | "attempt" | "results" | "account" | "learn";
@@ -42,6 +43,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [theme, setTheme] = useState<Theme>(resolveTheme);
   const headingRef = useRef<HTMLHeadingElement>(null);
 
   const refreshLibrary = useCallback(() => setQuizzes(loadQuizzes()), []);
@@ -54,6 +56,24 @@ export default function App() {
   }, [quizzes, searchQuery]);
 
   useEffect(() => { headingRef.current?.focus(); }, [screen, attempt?.currentIndex]);
+
+  useEffect(() => { applyTheme(theme); }, [theme]);
+
+  useEffect(() => {
+    const mediaQuery = getThemeMediaQuery();
+    if (!mediaQuery) return;
+    const followSystemTheme = (event: MediaQueryListEvent) => {
+      if (!getSavedTheme()) setTheme(event.matches ? "dark" : "light");
+    };
+    mediaQuery.addEventListener("change", followSystemTheme);
+    return () => mediaQuery.removeEventListener("change", followSystemTheme);
+  }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === "light" ? "dark" : "light";
+    saveThemePreference(nextTheme);
+    setTheme(nextTheme);
+  };
 
   const importValidatedQuiz = useCallback((file: QuizFile, replace: boolean) => {
     const exists = loadQuizzes().some((quiz) => quiz.id === file.quiz.id);
@@ -147,6 +167,15 @@ export default function App() {
         </button>
         <div className="topbar-actions">
           <span className="offline-pill"><span className="status-dot" /> Offline ready</span>
+          <button
+            className="theme-toggle"
+            type="button"
+            onClick={toggleTheme}
+            aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+            title={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+          >
+            <span aria-hidden="true">{theme === "light" ? "☾" : "☀"}</span>
+          </button>
           <button className="sync-button" type="button" onClick={() => setScreen("account")}>
             {cloud.user ? `Sync: ${cloud.status}` : "Cloud sync"}
           </button>

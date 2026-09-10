@@ -7,12 +7,12 @@ Each file contains exactly one quiz and uses `schemaVersion: 1`. See [`public/ex
 - `quiz.id`, every `question.id`, and every option `id` must be non-empty and unique within their collection.
 - `quiz.title` and each question `prompt` are required.
 - `quiz.description` and each question `explanation` are optional.
-- `quiz.learningMaterial` is optional. When present, the quiz card includes a **Study guide** button.
+- `quiz.learningMaterial` is optional and belongs inside the `quiz` object. When present, the quiz card includes a **Study guide** button.
 - Unknown fields are rejected so that AI-generated mistakes are visible during import.
 
 ## Optional learning material
 
-Learning material is stored inside the same JSON file as its quiz, so importing, deleting, and cloud-syncing the quiz also handles its guide.
+Learning material is stored inside the same JSON file as its quiz, so importing, offline storage, deletion, and cloud synchronization also handle its guide. The reusable AI prompt recommends three to six sections, while the schema accepts one to thirty sections.
 
 ```json
 {
@@ -48,6 +48,33 @@ Section IDs must be unique within the guide. A guide may contain up to thirty se
 - `distribution`: two to six `groups`. Each group has a `label`, optional `note`, and one to six `segments`. Every segment requires a `label` and a positive integer `count`.
 
 Illustrations are rendered by the app instead of loading external images. This keeps imported guides safe, responsive, and available offline.
+
+The downloadable Basic Mathematics example demonstrates all three illustration structures. Their minimal shapes are:
+
+```json
+{
+  "flow": {
+    "type": "flow",
+    "items": [{ "label": "Start" }, { "label": "Finish", "detail": "Expected result" }]
+  },
+  "comparison": {
+    "type": "comparison",
+    "items": [
+      { "label": "Option A", "detail": "First use case", "highlight": true },
+      { "label": "Option B", "detail": "Second use case" }
+    ]
+  },
+  "distribution": {
+    "type": "distribution",
+    "groups": [
+      { "label": "Group A", "segments": [{ "label": "Yes", "count": 8 }, { "label": "No", "count": 2 }] },
+      { "label": "Group B", "segments": [{ "label": "Yes", "count": 5 }, { "label": "No", "count": 5 }] }
+    ]
+  }
+}
+```
+
+These are separate shape examples. A real section uses one illustration object, not the wrapper object shown above.
 
 ## Question types
 

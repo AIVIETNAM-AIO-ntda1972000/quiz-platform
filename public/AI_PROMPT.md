@@ -1,16 +1,19 @@
 # AI prompt for Quiz Platform
 
-Create a quiz and visual study guide about **[TOPIC]** for a learner at **[LEVEL]**.
+Create a quiz about **[TOPIC]** for a learner at **[LEVEL]**.
 
-Return only valid JSON. Do not use Markdown fences or add commentary. Follow schema version 1 from the example below. Use unique IDs. Include a mix of `singleChoice`, `multipleChoice`, and `shortText` questions. Every choice answer must reference existing option IDs. For short-text questions, include reasonable alternative accepted answers. Explanations should be short and educational.
+Return one valid JSON object only. Do not use Markdown fences, comments, explanations outside the JSON, external URLs, HTML, image data, or properties that are not shown in schema version 1.
 
-Add an optional `learningMaterial` object to the quiz. It should contain three to six focused sections explaining concepts, reasons, steps, and practical pitfalls before the learner attempts the questions. Each section may have one structured offline illustration:
+Requirements:
 
-- `flow`: two to eight ordered items with `label` and optional `detail`.
-- `comparison`: two to six items with `label`, `detail`, and optional `highlight`.
-- `distribution`: two to six groups containing labeled positive integer counts.
+- Put the optional `learningMaterial` object inside `quiz`. It is recommended for teaching-oriented quizzes and is imported, stored offline, deleted, and cloud-synchronized together with the quiz.
+- Create three to six focused study-guide sections covering concepts, reasons, practical steps, and common pitfalls. Each section needs a unique ID, one to eight paragraphs, and may contain one to ten key points and one structured illustration.
+- Use `flow` for two to eight ordered steps, `comparison` for two to six alternatives, and `distribution` for two to six groups of labeled counts. Each distribution group needs one to six segments, and every `count` must be a positive integer.
+- Include an appropriate mix of `singleChoice`, `multipleChoice`, and `shortText` questions. Question IDs must be unique. Option IDs must be unique within each question.
+- Every correct choice ID must reference an option in the same question. Include reasonable alternative accepted answers for short text.
+- Keep explanations short and educational. Use illustrations only when they materially improve understanding.
 
-Use illustrations only when they improve understanding. Keep all content self-contained and do not include external URLs, HTML, Markdown, or image data.
+Use this complete example as the structural template:
 
 ```json
 {
@@ -36,6 +39,46 @@ Use illustrations only when they improve understanding. Keep all content self-co
               { "label": "Second step", "detail": "Expected result" }
             ]
           }
+        },
+        {
+          "id": "compare-options",
+          "title": "Compare the main options",
+          "paragraphs": ["Explain when each option is useful."],
+          "illustration": {
+            "type": "comparison",
+            "title": "Option comparison",
+            "items": [
+              { "label": "Option A", "detail": "Use when the first condition applies.", "highlight": true },
+              { "label": "Option B", "detail": "Use when the second condition applies." }
+            ]
+          }
+        },
+        {
+          "id": "read-distribution",
+          "title": "Read grouped counts",
+          "paragraphs": ["Explain what the counts show and what they do not prove."],
+          "illustration": {
+            "type": "distribution",
+            "title": "Two example groups",
+            "groups": [
+              {
+                "label": "Group A",
+                "note": "Mostly category one",
+                "segments": [
+                  { "label": "Category one", "count": 8 },
+                  { "label": "Category two", "count": 2 }
+                ]
+              },
+              {
+                "label": "Group B",
+                "note": "Evenly mixed",
+                "segments": [
+                  { "label": "Category one", "count": 5 },
+                  { "label": "Category two", "count": 5 }
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -43,9 +86,24 @@ Use illustrations only when they improve understanding. Keep all content self-co
       {
         "id": "q1",
         "type": "singleChoice",
-        "prompt": "Question text",
+        "prompt": "Choose one answer.",
         "options": [{ "id": "a", "text": "Answer A" }, { "id": "b", "text": "Answer B" }],
         "correctOptionId": "a",
+        "explanation": "Why answer A is correct."
+      },
+      {
+        "id": "q2",
+        "type": "multipleChoice",
+        "prompt": "Choose every correct answer.",
+        "options": [{ "id": "a", "text": "Answer A" }, { "id": "b", "text": "Answer B" }, { "id": "c", "text": "Answer C" }],
+        "correctOptionIds": ["a", "c"],
+        "explanation": "Why A and C form the exact correct set."
+      },
+      {
+        "id": "q3",
+        "type": "shortText",
+        "prompt": "Type the short answer.",
+        "acceptedAnswers": ["Expected answer", "Accepted alternative"],
         "explanation": "Why this answer is correct."
       }
     ]
