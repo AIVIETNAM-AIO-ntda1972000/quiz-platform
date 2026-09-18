@@ -1,0 +1,9 @@
+project_id = "quiz-platform"
+
+[auth]
+site_url = "http://localhost:5173"
+
+[auth.oauth_server]
+enabled = true
+authorization_url_path = "/oauth-consent.html"
+allow_dynamic_registration = true

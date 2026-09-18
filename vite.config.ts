@@ -6,6 +6,14 @@ const base = process.env.VITE_BASE_PATH ?? "/";
 
 export default defineConfig({
   base,
+  build: {
+    rollupOptions: {
+      input: {
+        main: "index.html",
+        oauthConsent: "oauth-consent.html"
+      }
+    }
+  },
   plugins: [
     react(),
     VitePWA({
