@@ -3,8 +3,8 @@ import { isCloudConfigured, useCloudSync } from "./cloudSync";
 import { exampleQuizFile } from "./exampleQuiz";
 import { gradeQuiz, isCorrect } from "./grading";
 import { LearningGuide } from "./LearningGuide";
-import type { Answer, Attempt, Question, Quiz, QuizFile, QuizResult } from "./models";
-import { parseQuizJson } from "./quizSchema";
+import type { Answer, Attempt, Question, Quiz, QuizResult } from "./models";
+import { parseQuizJson, validateQuizFile } from "./quizSchema";
 import { clearAttempt, clearQuizProgress, deleteQuiz, initializeQuizLibrary, loadAttempt, loadQuizzes, loadResult, saveAttempt, saveQuiz, saveResult } from "./storage";
 import { applyTheme, getSavedTheme, getThemeMediaQuery, resolveTheme, saveThemePreference, type Theme } from "./theme";
 import { useWebMcp } from "./webMcp";
@@ -39,6 +39,7 @@ export default function App() {
   const [attempt, setAttempt] = useState<Attempt>();
   const [result, setResult] = useState<QuizResult>();
   const [importErrors, setImportErrors] = useState<string[]>([]);
+  const [pastedJson, setPastedJson] = useState("");
   const [notice, setNotice] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [username, setUsername] = useState("");
@@ -75,7 +76,10 @@ export default function App() {
     setTheme(nextTheme);
   };
 
-  const importValidatedQuiz = useCallback((file: QuizFile, replace: boolean) => {
+  const importQuizPayload = useCallback((payload: unknown, replace: boolean) => {
+    const validation = validateQuizFile(payload);
+    if (!validation.success) throw new Error(validation.errors.join("; "));
+    const file = validation.data;
     const exists = loadQuizzes().some((quiz) => quiz.id === file.quiz.id);
     if (exists && !replace) throw new Error("A quiz with this id already exists.");
     if (exists) clearQuizProgress(file.quiz.id);
@@ -83,9 +87,10 @@ export default function App() {
     refreshLibrary();
     setNotice(`${file.quiz.title} was ${exists ? "replaced" : "imported"}.`);
     setScreen("library");
+    return { imported: true as const, quizId: file.quiz.id, title: file.quiz.title, replaced: exists };
   }, [refreshLibrary]);
 
-  useWebMcp(quizzes, importValidatedQuiz);
+  useWebMcp(quizzes, importQuizPayload);
 
   const goHome = () => {
     setImportErrors([]);
@@ -130,6 +135,19 @@ export default function App() {
     setScreen("results");
   };
 
+  const importQuizText = (text: string): boolean => {
+    setImportErrors([]);
+    const validation = parseQuizJson(text);
+    if (!validation.success) {
+      setImportErrors(validation.errors);
+      return false;
+    }
+    const exists = quizzes.some((quiz) => quiz.id === validation.data.quiz.id);
+    if (exists && !window.confirm(`Replace “${validation.data.quiz.title}” and clear its saved progress?`)) return false;
+    importQuizPayload(validation.data, exists);
+    return true;
+  };
+
   const handleFile = async (file?: File) => {
     setImportErrors([]);
     if (!file) return;
@@ -137,14 +155,7 @@ export default function App() {
       setImportErrors(["file: Choose a .json file"]);
       return;
     }
-    const validation = parseQuizJson(await file.text());
-    if (!validation.success) {
-      setImportErrors(validation.errors);
-      return;
-    }
-    const exists = quizzes.some((quiz) => quiz.id === validation.data.quiz.id);
-    if (exists && !window.confirm(`Replace “${validation.data.quiz.title}” and clear its saved progress?`)) return;
-    importValidatedQuiz(validation.data, exists);
+    importQuizText(await file.text());
   };
 
   const handleDeleteQuiz = (quiz: Quiz) => {
@@ -300,6 +311,27 @@ export default function App() {
             <span>One quiz and optional study guide per file · processed locally</span>
             <input aria-label="Choose a JSON file" type="file" accept="application/json,.json" onChange={(event) => { void handleFile(event.target.files?.[0]); event.currentTarget.value = ""; }} />
           </label>
+          <div className="import-divider" aria-hidden="true"><span>or paste JSON</span></div>
+          <label className="paste-import">
+            <span>Paste a chatbot response</span>
+            <textarea
+              value={pastedJson}
+              onChange={(event) => setPastedJson(event.target.value)}
+              placeholder='{"schemaVersion":1,"quiz":{...}}'
+              rows={9}
+              spellCheck={false}
+            />
+          </label>
+          <button
+            className="primary-button paste-button"
+            type="button"
+            disabled={!pastedJson.trim()}
+            onClick={() => {
+              if (importQuizText(pastedJson)) setPastedJson("");
+            }}
+          >
+            Validate and import
+          </button>
           {importErrors.length > 0 && (
             <div className="error-box" role="alert">
               <strong>We could not import this file</strong>

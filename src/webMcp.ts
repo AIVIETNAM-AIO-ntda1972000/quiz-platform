@@ -1,6 +1,5 @@
 import { useEffect } from "react";
-import type { Quiz, QuizFile } from "./models";
-import { validateQuizFile } from "./quizSchema";
+import type { Quiz } from "./models";
 
 type ModelTool = {
   name: string;
@@ -17,7 +16,9 @@ declare global {
   }
 }
 
-export function useWebMcp(quizzes: Quiz[], importQuiz: (file: QuizFile, replace: boolean) => void): void {
+type ImportResult = { imported: true; quizId: string; title: string; replaced: boolean };
+
+export function useWebMcp(quizzes: Quiz[], importQuiz: (payload: unknown, replace: boolean) => ImportResult): void {
   useEffect(() => {
     const context = document.modelContext;
     if (!context?.registerTool) return;
@@ -48,12 +49,12 @@ export function useWebMcp(quizzes: Quiz[], importQuiz: (file: QuizFile, replace:
       annotations: { readOnlyHint: false, untrustedContentHint: true },
       execute: (input) => {
         const values = input as { payload?: unknown; replaceExisting?: boolean };
-        const result = validateQuizFile(values.payload);
-        if (!result.success) throw new Error(result.errors.join("; "));
-        const exists = quizzes.some((quiz) => quiz.id === result.data.quiz.id);
+        const quizId = values.payload && typeof values.payload === "object" && "quiz" in values.payload
+          ? (values.payload as { quiz?: { id?: unknown } }).quiz?.id
+          : undefined;
+        const exists = typeof quizId === "string" && quizzes.some((quiz) => quiz.id === quizId);
         if (exists && !values.replaceExisting) throw new Error("A quiz with this id already exists. Set replaceExisting to true to replace it.");
-        importQuiz(result.data, Boolean(values.replaceExisting));
-        return { imported: true, quizId: result.data.quiz.id, replaced: exists };
+        return importQuiz(values.payload, Boolean(values.replaceExisting));
       }
     });
     return () => lifecycle.abort();

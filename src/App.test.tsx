@@ -65,6 +65,33 @@ describe("Quiz Platform", () => {
     expect(screen.getByRole("img", { name: "Flow diagram" })).toHaveTextContent("Experiment");
   });
 
+  it("validates and imports JSON pasted from a chatbot", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: "Import quiz" }));
+
+    const pasteBox = screen.getByLabelText("Paste a chatbot response");
+    await user.click(pasteBox);
+    await user.paste("{");
+    await user.click(screen.getByRole("button", { name: "Validate and import" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("not valid JSON");
+
+    await user.clear(pasteBox);
+    await user.click(pasteBox);
+    await user.paste(JSON.stringify({
+      schemaVersion: 1,
+      quiz: {
+        id: "pasted-quiz",
+        title: "Pasted Quiz",
+        questions: [{ id: "q1", type: "shortText", prompt: "Ready?", acceptedAnswers: ["Yes"] }],
+      },
+    }));
+    await user.click(screen.getByRole("button", { name: "Validate and import" }));
+
+    expect(await screen.findByRole("heading", { name: "Pasted Quiz" })).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("imported");
+  });
+
   it("completes a quiz, reviews results, and retries", async () => {
     const user = userEvent.setup();
     render(<App />);

@@ -17,7 +17,7 @@ Run unit and component tests with `npm test`, create a production build with `np
 
 1. Download [`public/AI_PROMPT.md`](public/AI_PROMPT.md) and replace `[TOPIC]` and `[LEVEL]`.
 2. Give the prompt to an AI assistant and save its JSON response as a `.json` file.
-3. Open Quiz Platform, choose **Import quiz**, and select the file.
+3. Open Quiz Platform, choose **Import quiz**, then select the file or paste the JSON response directly.
 
 The importer validates the complete file before saving it. The exact versioned contract is documented in [`docs/JSON_FORMAT.md`](docs/JSON_FORMAT.md), with a ready-to-import example at [`public/examples/basic-math.json`](public/examples/basic-math.json).
 
