@@ -201,6 +201,16 @@ h1:focus { outline: none; }
 .sync-status { padding: 0.75rem; border-radius: 10px; color: var(--neutral-text); background: var(--neutral-bg); }
 .sync-status.synced { color: var(--success-text); background: var(--success-bg); }
 .sync-status.error { color: var(--danger-panel-text); background: var(--danger-panel-bg); }
+.connected-clients { display: grid; gap: 0.7rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+.connected-clients h3 { margin: 0; }
+.connected-client { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.85rem; border-radius: 12px; background: var(--surface-subtle); }
+.connected-client > div { display: grid; gap: 0.2rem; }
+.connected-client span { color: var(--muted); font-size: 0.8rem; }
+.connected-client .delete-button { padding: 0 0.8rem; }
+.oauth-page .sync-status, .oauth-page .error-box { margin-top: 1.5rem; }
+.consent-panel dl { display: grid; grid-template-columns: minmax(130px, auto) 1fr; gap: 0.65rem 1rem; margin: 0; }
+.consent-panel dt { color: var(--muted); font-weight: 800; }
+.consent-panel dd { min-width: 0; margin: 0; overflow-wrap: anywhere; }
 
 .inbox-list { display: grid; gap: 1rem; margin-top: 1.25rem; }
 .inbox-card { padding: 1.4rem; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); box-shadow: 0 16px 42px var(--shadow-card); }
@@ -317,6 +327,9 @@ h1:focus { outline: none; }
   .resource-row { display: grid; }
   .resource-actions { justify-content: space-between; }
   .inbox-actions { display: grid; }
+  .connected-client { align-items: stretch; flex-direction: column; }
+  .consent-panel dl { grid-template-columns: 1fr; gap: 0.3rem; }
+  .consent-panel dd + dt { margin-top: 0.5rem; }
   .progress-track { margin-bottom: 2.5rem; }
   .attempt-actions .primary-button, .attempt-actions .secondary-button { flex: 1; }
   .score-card { grid-template-columns: 1fr; text-align: center; }

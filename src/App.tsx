@@ -5,6 +5,7 @@ import { gradeQuiz, isCorrect } from "./grading";
 import { LearningGuide } from "./LearningGuide";
 import { QuizInbox } from "./QuizInboxPanel";
 import type { Answer, Attempt, Question, Quiz, QuizResult } from "./models";
+import { useOAuthGrants } from "./oauthGrants";
 import { useQuizInbox, type QuizInboxItem } from "./quizInbox";
 import { parseQuizJson, validateQuizFile } from "./quizSchema";
 import { clearAttempt, clearQuizProgress, deleteQuiz, initializeQuizLibrary, loadAttempt, loadQuizzes, loadResult, saveAttempt, saveQuiz, saveResult } from "./storage";
@@ -52,6 +53,7 @@ export default function App() {
   const refreshLibrary = useCallback(() => setQuizzes(loadQuizzes()), []);
   const cloud = useCloudSync(refreshLibrary);
   const inbox = useQuizInbox(cloud.user);
+  const oauth = useOAuthGrants(cloud.user);
   const filteredQuizzes = useMemo(() => {
     const query = searchQuery.normalize("NFKC").trim().toLocaleLowerCase();
     if (!query) return quizzes;
@@ -190,6 +192,11 @@ export default function App() {
     if (await cloud.signIn(username, password)) setPassword("");
   };
 
+  const handleRevokeGrant = async (clientId: string, clientName: string) => {
+    if (!window.confirm(`Disconnect ${clientName}? It will no longer be able to access Quiz Platform.`)) return;
+    await oauth.revoke(clientId);
+  };
+
   return (
     <div className="app-shell">
       <header className="topbar">
@@ -315,6 +322,17 @@ export default function App() {
                 <button className="primary-button" type="button" onClick={() => void cloud.syncNow()}>Sync now</button>
                 <button className="secondary-button" type="button" onClick={() => void cloud.signOut()}>Sign out</button>
               </div>
+              <section className="connected-clients" aria-labelledby="connected-clients-heading">
+                <h3 id="connected-clients-heading">Connected AI clients</h3>
+                {oauth.message && <div className="sync-status error" role="status">{oauth.message}</div>}
+                {!oauth.message && oauth.grants.length === 0 && <p>No AI clients are connected.</p>}
+                {oauth.grants.map((grant) => (
+                  <div className="connected-client" key={grant.clientId}>
+                    <div><strong>{grant.clientName}</strong><span>{grant.scopes.join(", ") || "Basic account access"}</span></div>
+                    <button className="delete-button" type="button" onClick={() => void handleRevokeGrant(grant.clientId, grant.clientName)}>Disconnect</button>
+                  </div>
+                ))}
+              </section>
             </div>
           ) : (
             <form className="account-panel" onSubmit={(event) => void handleSignIn(event)}>
