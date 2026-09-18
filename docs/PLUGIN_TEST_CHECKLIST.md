@@ -2,7 +2,7 @@
 
 ## Configuration
 
-- [ ] Replace `your-project-ref` in both plugin MCP configuration files.
+- [ ] Confirm both plugin MCP configuration files point to the deployed production project.
 - [ ] Apply `supabase/schema.sql` to the production project.
 - [ ] Enable the Supabase OAuth server, dynamic client registration, and an asymmetric JWT signing key.
 - [ ] Configure the production consent URL as `/quiz-platform/oauth-consent.html`.

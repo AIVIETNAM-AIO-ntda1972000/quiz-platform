@@ -69,7 +69,7 @@ For local development, [`supabase/config.toml`](../supabase/config.toml) enables
 Install and authenticate a current Supabase CLI, then run:
 
 ```bash
-supabase link --project-ref YOUR_PROJECT_REF
+supabase link --project-ref tqclweyjcawvwgjbhacb
 supabase secrets set QUIZ_PLATFORM_APP_URL=https://aivietnam-aio-ntda1972000.github.io/quiz-platform/
 supabase functions deploy quiz-mcp
 ```
@@ -77,14 +77,14 @@ supabase functions deploy quiz-mcp
 Supabase automatically supplies `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` to the deployed function. The endpoint is:
 
 ```text
-https://YOUR_PROJECT_REF.supabase.co/functions/v1/quiz-mcp
+https://tqclweyjcawvwgjbhacb.supabase.co/functions/v1/quiz-mcp
 ```
 
 Keep `[functions.quiz-mcp] verify_jwt = false` in `supabase/config.toml`. This does not make the tools public: it allows the function's OAuth middleware to serve discovery and verify the user token itself.
 
 ### 4. Configure the plugin package
 
-Replace `your-project-ref` in both files:
+The production MCP endpoint is configured in both files:
 
 - `plugins/quiz-platform/mcp.json`
 - `plugins/quiz-platform/.mcp.json`
@@ -96,7 +96,7 @@ The root files are the portable Agent Plugins package. The `.codex-plugin` files
 An unauthenticated initialize request should return `401` and a `WWW-Authenticate` header pointing to OAuth protected-resource metadata:
 
 ```bash
-curl -i -X POST "https://YOUR_PROJECT_REF.supabase.co/functions/v1/quiz-mcp" \
+curl -i -X POST "https://tqclweyjcawvwgjbhacb.supabase.co/functions/v1/quiz-mcp" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json, text/event-stream" \
   -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"curl","version":"1"}}}'
@@ -177,7 +177,7 @@ Use the origin `https://aivietnam-aio-ntda1972000.github.io` and the exact autho
 
 ### The plugin cannot connect
 
-Replace the `your-project-ref` placeholder, deploy the function, and confirm the endpoint is HTTPS. Then test OAuth through MCP Inspector before debugging the chatbot host.
+Confirm the configured project is correct, deploy the function, and confirm the endpoint is HTTPS. Then test OAuth through MCP Inspector before debugging the chatbot host.
 
 ### A published quiz is not in the library
 
