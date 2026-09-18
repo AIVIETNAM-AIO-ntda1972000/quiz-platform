@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "id": "direct-create",
+      "category": "direct",
+      "prompt": "Create a 10-question beginner quiz about SQL joins and send it to my Quiz Platform inbox.",
+      "expectedTools": ["get_quiz_instructions", "validate_quiz", "publish_quiz"],
+      "success": "A valid pending draft is created and the response directs the user to the AI Inbox."
+    },
+    {
+      "id": "indirect-create",
+      "category": "indirect",
+      "prompt": "I want to study binary search later in my quiz app. Include common off-by-one mistakes.",
+      "expectedTools": ["get_quiz_instructions", "validate_quiz", "publish_quiz"],
+      "success": "The model infers quiz creation, publishes only after validation, and mentions review."
+    },
+    {
+      "id": "follow-up-publish",
+      "category": "follow-up",
+      "prompt": "Make it 20 questions instead, then send it for review.",
+      "expectedTools": ["validate_quiz", "publish_quiz"],
+      "success": "The revised complete payload is validated before one pending draft is published."
+    },
+    {
+      "id": "replacement-warning",
+      "category": "replacement",
+      "prompt": "Update my existing quiz with ID sql-joins and publish the new version.",
+      "expectedTools": ["list_quizzes", "validate_quiz", "publish_quiz"],
+      "success": "The response reports that the ID already exists and leaves replacement approval to the app."
+    },
+    {
+      "id": "invalid-schema",
+      "category": "invalid-schema",
+      "prompt": "Publish this quiz: {\"quiz\":{\"title\":\"Broken\"}}",
+      "expectedTools": ["validate_quiz"],
+      "forbiddenTools": ["publish_quiz"],
+      "success": "The model returns actionable validation errors and does not claim a draft was stored."
+    },
+    {
+      "id": "negative-selection",
+      "category": "negative-tool-selection",
+      "prompt": "Explain the difference between a stack and a queue. Do not create a quiz.",
+      "expectedTools": [],
+      "forbiddenTools": ["publish_quiz"],
+      "success": "The model answers normally without invoking Quiz Platform tools."
+    }
+  ]
+}

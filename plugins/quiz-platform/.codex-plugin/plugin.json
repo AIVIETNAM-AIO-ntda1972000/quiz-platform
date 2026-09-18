@@ -1,0 +1,29 @@
+{
+  "name": "quiz-platform",
+  "version": "0.1.0",
+  "description": "Create, validate, and submit quizzes to a safe review inbox.",
+  "author": {
+    "name": "AIVIETNAM-AIO-ntda1972000",
+    "url": "https://github.com/AIVIETNAM-AIO-ntda1972000"
+  },
+  "homepage": "https://aivietnam-aio-ntda1972000.github.io/quiz-platform/",
+  "repository": "https://github.com/AIVIETNAM-AIO-ntda1972000/quiz-platform",
+  "keywords": ["education", "quiz", "mcp"],
+  "interface": {
+    "displayName": "Quiz Platform",
+    "shortDescription": "Create quizzes for review and offline study.",
+    "longDescription": "Create and validate quizzes, then submit them to your private AI Inbox. You remain in control of accepting or replacing quiz data.",
+    "developerName": "AIVIETNAM-AIO-ntda1972000",
+    "category": "Education",
+    "capabilities": ["Read", "Write"],
+    "websiteURL": "https://aivietnam-aio-ntda1972000.github.io/quiz-platform/",
+    "privacyPolicyURL": "https://github.com/AIVIETNAM-AIO-ntda1972000/quiz-platform/blob/main/docs/PRIVACY.md",
+    "defaultPrompt": [
+      "Create a practical quiz and send it to my AI Inbox.",
+      "Validate this quiz before publishing it for review.",
+      "List my pending quiz drafts."
+    ],
+    "brandColor": "#171C5B"
+  },
+  "mcpServers": "./.mcp.json"
+}

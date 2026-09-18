@@ -1,0 +1,9 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "quiz-platform": {
+      "type": "streamable-http",
+      "url": "https://your-project-ref.supabase.co/functions/v1/quiz-mcp"
+    }
+  }
+}
