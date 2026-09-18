@@ -1,0 +1,20 @@
+{
+  "name": "quiz-platform",
+  "interface": {
+    "displayName": "Quiz Platform"
+  },
+  "plugins": [
+    {
+      "name": "quiz-platform",
+      "source": {
+        "source": "local",
+        "path": "./plugins/quiz-platform"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_USE"
+      },
+      "category": "Education"
+    }
+  ]
+}
