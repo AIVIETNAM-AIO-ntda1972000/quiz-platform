@@ -33,8 +33,10 @@ Pushes to `main` deploy the PWA through the **Deploy web app** GitHub Actions wo
 
 Cloud sync lets the same account access quizzes and progress on the web and Android. The app continues to work locally when Supabase is not configured or the device is offline.
 
+Signed-in users also receive AI-generated quiz drafts in a private review inbox. Inbox drafts require an internet connection; accepted quizzes use the existing offline storage and synchronization flow.
+
 1. Create a Supabase project and open its SQL Editor.
-2. Run [`supabase/schema.sql`](supabase/schema.sql). This creates one private data row per user and enables Row Level Security.
+2. Run [`supabase/schema.sql`](supabase/schema.sql). This creates private synchronized data and quiz-inbox rows per user and enables Row Level Security.
 3. Copy `.env.example` to `.env.local`, then enter the project URL and publishable key.
 4. For GitHub Pages and APK builds, add repository Actions secrets named `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`.
 5. In Supabase Authentication, enable the Email provider and disable **Confirm email**. The app derives an internal, non-deliverable auth address from each username, so users only enter a username and password.

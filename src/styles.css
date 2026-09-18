@@ -138,6 +138,7 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
 .page, .results-page { width: min(960px, 90vw); margin: 0 auto; padding: 4.5rem 0; }
 .narrow-page, .attempt-page { width: min(760px, 90vw); margin: 0 auto; padding: 3rem 0 4.5rem; }
 .welcome-row { display: flex; align-items: end; justify-content: space-between; gap: 3rem; margin-bottom: 3rem; }
+.welcome-actions { display: flex; gap: 0.75rem; }
 .eyebrow, .card-label { margin: 0 0 0.75rem; color: var(--accent-text); font-size: 0.75rem; font-weight: 900; letter-spacing: 0.14em; }
 h1 { max-width: 680px; margin: 0; font-size: clamp(2.3rem, 6vw, 4.5rem); line-height: 0.98; letter-spacing: -0.055em; }
 h1:focus { outline: none; }
@@ -200,6 +201,18 @@ h1:focus { outline: none; }
 .sync-status { padding: 0.75rem; border-radius: 10px; color: var(--neutral-text); background: var(--neutral-bg); }
 .sync-status.synced { color: var(--success-text); background: var(--success-bg); }
 .sync-status.error { color: var(--danger-panel-text); background: var(--danger-panel-bg); }
+
+.inbox-list { display: grid; gap: 1rem; margin-top: 1.25rem; }
+.inbox-card { padding: 1.4rem; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); box-shadow: 0 16px 42px var(--shadow-card); }
+.inbox-heading { display: flex; align-items: start; justify-content: space-between; gap: 1rem; }
+.inbox-heading h2 { margin: 0; }
+.inbox-heading > span, .inbox-meta { color: var(--muted); font-size: 0.82rem; font-weight: 750; }
+.inbox-card > p { color: var(--muted); line-height: 1.55; }
+.inbox-meta { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; }
+.inbox-card details { margin-top: 1rem; padding: 0.85rem; border-radius: 12px; background: var(--surface-subtle); }
+.inbox-card summary { color: var(--accent-text); cursor: pointer; font-weight: 800; }
+.inbox-card details p, .inbox-card details ol { color: var(--body-copy); line-height: 1.5; }
+.inbox-actions { display: flex; flex-wrap: wrap; gap: 0.65rem; margin-top: 1rem; }
 
 .guide-page { width: min(1080px, 90vw); margin: 0 auto; padding: 3rem 0 5rem; }
 .guide-hero { padding: 2rem; border-radius: 26px; color: var(--on-accent); background: linear-gradient(135deg, var(--indigo), var(--hero-secondary)); box-shadow: 0 22px 60px var(--shadow-hero); }
@@ -291,6 +304,8 @@ h1:focus { outline: none; }
   .page, .narrow-page, .attempt-page, .results-page { width: auto; padding: 2.5rem 1rem calc(2.5rem + env(safe-area-inset-bottom)); }
   .welcome-row { display: block; margin-bottom: 2rem; }
   .welcome-row .primary-button { width: 100%; margin-top: 1.5rem; }
+  .welcome-actions { display: grid; margin-top: 1.5rem; }
+  .welcome-actions .primary-button { margin-top: 0; }
   .library-tools { align-items: stretch; flex-direction: column; }
   .quiz-card { grid-template-columns: auto 1fr; padding: 1rem; gap: 1rem; }
   .quiz-number { width: 52px; height: 74px; }
@@ -301,6 +316,7 @@ h1:focus { outline: none; }
   .delete-button { padding: 0 1rem; }
   .resource-row { display: grid; }
   .resource-actions { justify-content: space-between; }
+  .inbox-actions { display: grid; }
   .progress-track { margin-bottom: 2.5rem; }
   .attempt-actions .primary-button, .attempt-actions .secondary-button { flex: 1; }
   .score-card { grid-template-columns: 1fr; text-align: center; }
