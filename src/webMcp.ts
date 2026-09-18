@@ -28,7 +28,7 @@ export function useWebMcp(quizzes: Quiz[], importQuiz: (payload: unknown, replac
     register({
       name: "list_quizzes",
       title: "List quizzes",
-      description: "List the quizzes currently stored on this device.",
+      description: "Local-browser integration: list quizzes currently stored on this device.",
       inputSchema: { type: "object", properties: {}, additionalProperties: false },
       annotations: { readOnlyHint: true, untrustedContentHint: true },
       execute: () => quizzes.map(({ id, title, questions }) => ({ id, title, questionCount: questions.length }))
@@ -36,7 +36,7 @@ export function useWebMcp(quizzes: Quiz[], importQuiz: (payload: unknown, replac
     register({
       name: "import_quiz",
       title: "Import quiz",
-      description: "Validate and import a schemaVersion 1 quiz into this device's quiz library.",
+      description: "Local-browser integration: validate and import a schemaVersion 1 quiz into this device's quiz library.",
       inputSchema: {
         type: "object",
         properties: {
