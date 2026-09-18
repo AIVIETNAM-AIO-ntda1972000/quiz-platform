@@ -25,6 +25,15 @@ A quiz may include `learningMaterial` with explanatory sections, key points, and
 
 Additional ready-to-import quiz files are kept in [`sample-quizzes`](sample-quizzes), including a Vietnamese introduction to AI.
 
+### Create quizzes with an AI chatbot
+
+Use either path:
+
+- **Works with any chatbot:** give [`public/AI_PROMPT.md`](public/AI_PROMPT.md) to Gemini, ChatGPT, DeepSeek, Qwen, or another assistant, then paste the returned JSON into **Import quiz**.
+- **Connected MCP client:** after the owner deploys the Supabase MCP server, give [`public/AI_CONNECTED_PROMPT.md`](public/AI_CONNECTED_PROMPT.md) to a compatible client. The chatbot validates and publishes a pending draft; open **AI Inbox** to preview and accept it.
+
+Connected chatbots cannot overwrite the synchronized quiz library. They can only submit validated pending drafts. Full owner setup, client compatibility, security details, and troubleshooting are in [`docs/AI_CONNECTORS.md`](docs/AI_CONNECTORS.md).
+
 ## Web app
 
 Pushes to `main` deploy the PWA through the **Deploy web app** GitHub Actions workflow. After opening it once, the installed app shell works offline.
@@ -43,7 +52,7 @@ Signed-in users also receive AI-generated quiz drafts in a private review inbox.
 
 The publishable key is designed for frontend use when Row Level Security is enabled. Never add the Supabase service-role key to this repository or a frontend environment variable.
 
-OAuth connections require an asymmetric JWT signing key and the Supabase OAuth 2.1 server. Set the production Site URL to the deployed `/quiz-platform/` URL, set the Authorization Path to `/oauth-consent.html`, and enable dynamic client registration. The repository's `supabase/config.toml` contains the matching local-development settings.
+OAuth connections require an asymmetric JWT signing key and the Supabase OAuth 2.1 server. For this GitHub Pages deployment, set the production Site URL origin to `https://aivietnam-aio-ntda1972000.github.io`, set the Authorization Path to `/quiz-platform/oauth-consent.html`, and enable dynamic client registration. The repository's `supabase/config.toml` contains the matching local-development settings.
 
 Usernames are case-insensitive, contain 3–32 ASCII letters, numbers, dots, dashes, or underscores, and cannot be recovered by email. Administrators should provide a separate account-recovery process before using this beyond a personal or classroom deployment.
 

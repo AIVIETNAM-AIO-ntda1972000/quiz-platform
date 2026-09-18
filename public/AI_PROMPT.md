@@ -1,4 +1,6 @@
-# AI prompt for Quiz Platform
+# JSON-only AI prompt for Quiz Platform
+
+Use this universal fallback with any chatbot, including chat interfaces that cannot connect to arbitrary MCP servers. After the chatbot responds, paste the JSON into Quiz Platform's import screen. Do not ask the chatbot to upload or publish anything when using this prompt.
 
 Create a quiz about **[TOPIC]** for a learner at **[LEVEL]**.
 

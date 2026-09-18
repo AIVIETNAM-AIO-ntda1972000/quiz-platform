@@ -2,6 +2,17 @@
 
 Each file contains exactly one quiz and uses `schemaVersion: 1`. See [`public/examples/basic-math.json`](../public/examples/basic-math.json) for a complete example.
 
+The same contract and validator apply to every creation path:
+
+| Path | How the quiz enters the app |
+|---|---|
+| File import | Select a `.json` file on the import screen. |
+| Pasted JSON | Paste the JSON-only response from any AI chatbot. |
+| Local-browser WebMCP | A compatible browser tool imports directly into that device after duplicate confirmation. |
+| Remote OAuth MCP | A connected client publishes a pending AI Inbox draft; the user must accept it. |
+
+No path has a more permissive schema. Remote MCP publishing never writes directly to the synchronized quiz library.
+
 ## Shared fields
 
 - `quiz.id`, every `question.id`, and every option `id` must be non-empty and unique within their collection.
