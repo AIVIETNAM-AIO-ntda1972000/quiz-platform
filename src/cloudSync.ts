@@ -15,7 +15,7 @@ const supabaseKey = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
 
 export const isCloudConfigured = Boolean(supabaseUrl && supabaseKey);
 
-const supabase = isCloudConfigured
+export const supabase = isCloudConfigured
   ? createClient(supabaseUrl, supabaseKey, {
     auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
   })

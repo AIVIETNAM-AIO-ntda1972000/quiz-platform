@@ -3,13 +3,15 @@ import { isCloudConfigured, useCloudSync } from "./cloudSync";
 import { exampleQuizFile } from "./exampleQuiz";
 import { gradeQuiz, isCorrect } from "./grading";
 import { LearningGuide } from "./LearningGuide";
+import { QuizInbox } from "./QuizInboxPanel";
 import type { Answer, Attempt, Question, Quiz, QuizResult } from "./models";
+import { useQuizInbox, type QuizInboxItem } from "./quizInbox";
 import { parseQuizJson, validateQuizFile } from "./quizSchema";
 import { clearAttempt, clearQuizProgress, deleteQuiz, initializeQuizLibrary, loadAttempt, loadQuizzes, loadResult, saveAttempt, saveQuiz, saveResult } from "./storage";
 import { applyTheme, getSavedTheme, getThemeMediaQuery, resolveTheme, saveThemePreference, type Theme } from "./theme";
 import { useWebMcp } from "./webMcp";
 
-type Screen = "library" | "import" | "attempt" | "results" | "account" | "learn";
+type Screen = "library" | "import" | "attempt" | "results" | "account" | "learn" | "inbox";
 
 function initialQuizzes(): Quiz[] {
   return initializeQuizLibrary(exampleQuizFile.quiz);
@@ -49,6 +51,7 @@ export default function App() {
 
   const refreshLibrary = useCallback(() => setQuizzes(loadQuizzes()), []);
   const cloud = useCloudSync(refreshLibrary);
+  const inbox = useQuizInbox(cloud.user);
   const filteredQuizzes = useMemo(() => {
     const query = searchQuery.normalize("NFKC").trim().toLocaleLowerCase();
     if (!query) return quizzes;
@@ -165,6 +168,23 @@ export default function App() {
     setNotice(`${quiz.title} was deleted.`);
   };
 
+  const handleAcceptInbox = async (item: QuizInboxItem) => {
+    const exists = quizzes.some((quiz) => quiz.id === item.quizId);
+    if (exists && !window.confirm(`Replace “${item.title}” and clear its saved progress?`)) return;
+    if (!await inbox.review(item.id, "accepted")) return;
+    importQuizPayload(item.payload, exists);
+  };
+
+  const handleRejectInbox = async (item: QuizInboxItem) => {
+    if (!window.confirm(`Reject “${item.title}”?`)) return;
+    await inbox.review(item.id, "rejected");
+  };
+
+  const handleDeleteInbox = async (item: QuizInboxItem) => {
+    if (!window.confirm(`Permanently delete the submission “${item.title}”?`)) return;
+    await inbox.remove(item.id);
+  };
+
   const handleSignIn = async (event: React.FormEvent) => {
     event.preventDefault();
     if (await cloud.signIn(username, password)) setPassword("");
@@ -201,7 +221,10 @@ export default function App() {
               <h1 ref={headingRef} tabIndex={-1}>What will you learn today?</h1>
               <p>Import an AI-generated quiz with an optional study guide, practise at your pace, and keep your progress on this device.</p>
             </div>
-            <button className="primary-button" type="button" onClick={() => setScreen("import")}>Import quiz</button>
+            <div className="welcome-actions">
+              {cloud.user && <button className="secondary-button" type="button" onClick={() => setScreen("inbox")}>AI inbox{inbox.items.length ? ` (${inbox.items.length})` : ""}</button>}
+              <button className="primary-button" type="button" onClick={() => setScreen("import")}>Import quiz</button>
+            </div>
           </section>
           {notice && <div className="notice" role="status">✓ {notice}</div>}
           <div className="library-tools">
@@ -257,6 +280,18 @@ export default function App() {
 
       {screen === "learn" && activeQuiz?.learningMaterial && (
         <LearningGuide material={activeQuiz.learningMaterial} quizTitle={activeQuiz.title} onBack={goHome} />
+      )}
+
+      {screen === "inbox" && (
+        <QuizInbox
+          items={inbox.items}
+          loading={inbox.loading}
+          message={inbox.message}
+          onAccept={(item) => void handleAcceptInbox(item)}
+          onReject={(item) => void handleRejectInbox(item)}
+          onDelete={(item) => void handleDeleteInbox(item)}
+          onBack={goHome}
+        />
       )}
 
       {screen === "account" && (
