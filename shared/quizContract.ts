@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { QuizFile } from "../src/models";
+import type { QuizFile } from "../src/models.ts";
 
 const nonEmptyText = z.string().trim().min(1, "Required");
 const optionSchema = z.object({ id: nonEmptyText, text: nonEmptyText }).strict();
