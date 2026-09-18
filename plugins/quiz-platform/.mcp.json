@@ -2,7 +2,7 @@
   "mcpServers": {
     "quiz-platform": {
       "type": "http",
-      "url": "https://your-project-ref.supabase.co/functions/v1/quiz-mcp"
+      "url": "https://tqclweyjcawvwgjbhacb.supabase.co/functions/v1/quiz-mcp"
     }
   }
 }

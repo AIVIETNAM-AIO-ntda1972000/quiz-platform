@@ -5,10 +5,9 @@ This package connects ChatGPT, Codex, or another compatible plugin host to the a
 ## Before testing
 
 1. Deploy `supabase/functions/quiz-mcp` to the target Supabase project.
-2. Replace `your-project-ref` in both `.mcp.json` and `mcp.json` with the real Supabase project reference.
-3. Confirm the resulting endpoint is public HTTPS and returns an OAuth discovery challenge to unauthenticated MCP requests.
-4. Configure the Supabase OAuth consent URL and deploy the GitHub Pages consent page.
-5. Use the cases in `evals/prompts.json` during developer-mode testing.
+2. Confirm the configured production endpoint is public HTTPS and returns an OAuth discovery challenge to unauthenticated MCP requests.
+3. Configure the Supabase OAuth consent URL and deploy the GitHub Pages consent page.
+4. Use the cases in `evals/prompts.json` during developer-mode testing.
 
 The compatibility manifest under `.codex-plugin/` supports local Codex authoring. The root `plugin.json` and `mcp.json` form the portable Agent Plugins package.
 
