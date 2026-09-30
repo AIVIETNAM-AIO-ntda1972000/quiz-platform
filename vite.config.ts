@@ -36,7 +36,7 @@ export default defineConfig({
         ]
       },
       workbox: {
-        globPatterns: ["**/*.{js,css,html,svg,png,json}"]
+        globPatterns: ["**/*.{js,css,html,svg,png,json,woff2}"]
       }
     })
   ],
@@ -44,6 +44,7 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: "./src/test/setup.ts",
     exclude: ["e2e/**", "node_modules/**"],
+    maxWorkers: 2,
     css: true
   }
 });

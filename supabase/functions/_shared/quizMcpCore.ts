@@ -5,25 +5,26 @@ export const MAX_QUIZ_PAYLOAD_BYTES = 1_048_576;
 export const MAX_PENDING_QUIZZES = 20;
 
 export const QUIZ_CREATION_INSTRUCTIONS = [
-  "Create one schemaVersion 1 quiz JSON object.",
+  "Create one quiz JSON object. Use schemaVersion 1 for plain passages and schemaVersion 2 for Markdown passages.",
   "Include quiz.id, quiz.title, and at least one supported question.",
   "Supported question types are singleChoice, multipleChoice, and shortText.",
   "Use unique quiz, question, option, and learning-section IDs.",
   "Choice answers must reference existing option IDs.",
   "learningMaterial is optional but recommended for teaching-oriented quizzes.",
   "For reading practice, define quiz.passages once and link any number of questions with passageId; never repeat the passage in each question.",
+  "Version 2 Markdown passages use format markdown, content, and optional embedded PNG/JPEG/WebP assets; images must use quiz-asset:id URLs. Raw HTML and remote images are forbidden.",
   "Call validate_quiz before publish_quiz. Publishing creates a pending draft that the user must accept in the AI Inbox.",
 ].join(" ");
 
 export const QUIZ_CONTRACT = {
-  root: { schemaVersion: 1, quiz: "Quiz" },
+  root: { schemaVersion: [1, 2], quiz: "Quiz" },
   Quiz: {
     required: ["id", "title", "questions"],
     optional: ["description", "learningMaterial", "passages"],
   },
   passages: {
-    required: ["id", "title", "paragraphs"],
-    rules: ["1 to 20 passages", "unique passage IDs", "1 to 30 non-empty paragraphs per passage"],
+    required: ["id", "title"],
+    rules: ["Version 1: 1 to 30 non-empty paragraphs", "Version 2: plain paragraphs or format markdown with content and optional embedded assets", "1 to 20 passages", "unique passage IDs"],
   },
   singleChoice: {
     required: ["id", "type", "prompt", "options", "correctOptionId"],

@@ -23,6 +23,7 @@ Keep `verify_jwt = false` in `supabase/config.toml`. The function's OAuth middle
 ## Safety boundaries
 
 - Maximum serialized quiz payload: 1 MiB.
+- Schema version 2 permits Markdown passages and validated embedded image assets; version 1 remains supported.
 - Maximum pending drafts per user: 20.
 - List tools return metadata only and never expose answers.
 - `publish_quiz` creates a pending inbox record; the user must accept it in the app.

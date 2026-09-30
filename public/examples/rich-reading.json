@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 2,
+  "quiz": {
+    "id": "neural-network-reading",
+    "title": "Reading Practice: A Small Neural Network",
+    "description": "Read an illustrated Markdown lesson, then answer three questions.",
+    "passages": [
+      {
+        "id": "network-guide",
+        "title": "How a Neural Network Learns",
+        "format": "markdown",
+        "content": "# A small neural network\n\nA neural network transforms input numbers into predictions. Each layer multiplies its inputs by *weights*, adds a bias, and applies an activation function. The weights are learned from examples rather than written by hand.\n\n## One training step\n\n```mermaid\nflowchart LR\n  A[Input] --> B[Prediction]\n  B --> C[Calculate loss]\n  C --> D[Update weights]\n  D --> B\n```\n\nThe loss measures the difference between a prediction and its target. A common loss for a numeric target is mean squared error:\n\n$$L = \\frac{1}{n} \\sum_{i=1}^{n}(y_i - \\hat{y}_i)^2$$\n\nAn optimizer uses information from the loss to adjust the weights. It repeats this process over many training examples. A low training loss does **not** prove that the model will work well on new data; use a separate validation set.\n\n```python\nfor batch in training_data:\n    prediction = model(batch.inputs)\n    loss = loss_function(prediction, batch.targets)\n    update_weights(loss)\n```\n\n| Term | Meaning |\n| --- | --- |\n| Weight | A learned number that changes a layer's output |\n| Loss | A measure of prediction error |\n\nThis practice guide is original learning material, not a framework-specific implementation."
+      }
+    ],
+    "questions": [
+      {
+        "id": "q1",
+        "type": "singleChoice",
+        "passageId": "network-guide",
+        "prompt": "What do the weights represent?",
+        "options": [
+          { "id": "a", "text": "Numbers learned from examples" },
+          { "id": "b", "text": "Fixed answers for every input" }
+        ],
+        "correctOptionId": "a",
+        "explanation": "The passage says weights are learned from examples rather than written by hand."
+      },
+      {
+        "id": "q2",
+        "type": "multipleChoice",
+        "passageId": "network-guide",
+        "prompt": "Which two statements are supported by the passage?",
+        "options": [
+          { "id": "a", "text": "Loss measures prediction error." },
+          { "id": "b", "text": "Low training loss guarantees good performance on new data." },
+          { "id": "c", "text": "Validation data can help assess performance on new examples." }
+        ],
+        "correctOptionIds": ["a", "c"],
+        "explanation": "The passage defines loss and recommends a separate validation set."
+      },
+      {
+        "id": "q3",
+        "type": "shortText",
+        "passageId": "network-guide",
+        "prompt": "What component uses the loss to adjust weights?",
+        "acceptedAnswers": ["optimizer", "an optimizer"],
+        "explanation": "An optimizer adjusts the weights using information from the loss."
+      }
+    ]
+  }
+}

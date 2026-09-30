@@ -194,3 +194,7 @@ Accept, reject, or delete at least one pending draft. The server permits at most
 - [OpenAI plugin authentication](https://developers.openai.com/plugins/build/auth)
 - [OpenAI plugin connection and testing](https://developers.openai.com/plugins/deploy/connect-chatgpt)
 - [OpenAI plugin packaging](https://developers.openai.com/plugins/build/plugins)
+
+# Rich reading quizzes
+
+Connected clients may submit `schemaVersion: 2` quizzes with Markdown passages and embedded image assets. They must run `get_quiz_instructions` and `validate_quiz` before `publish_quiz`. The 1 MiB MCP payload limit still applies. The app owner must apply `supabase/migrations/20260930_rich_sync.sql` before deploying the updated web app. For a universal non-MCP fallback, use `public/AI_RICH_PROMPT.md` and paste the resulting JSON.

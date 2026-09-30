@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { mergeStorageSnapshots, normalizeUsername, storageSnapshotsEqual, usernameToAuthEmail } from "./cloudSync";
 import { exampleQuizFile } from "./exampleQuiz";
+import richExample from "../public/examples/rich-reading.json";
 import type { StorageSnapshot } from "./storage";
 
 function snapshot(overrides: Partial<StorageSnapshot> = {}): StorageSnapshot {
@@ -55,6 +56,13 @@ describe("cloud snapshot merge", () => {
     });
 
     expect(storageSnapshotsEqual(left, right)).toBe(true);
+  });
+
+  it("promotes a merged snapshot to version 2 and never downgrades it", () => {
+    const local = snapshot({ schemaVersion: 2, quizzes: [richExample.quiz as StorageSnapshot["quizzes"][number]] });
+    const remote = snapshot();
+    expect(mergeStorageSnapshots(local, remote).schemaVersion).toBe(2);
+    expect(mergeStorageSnapshots(remote, local).schemaVersion).toBe(2);
   });
 });
 

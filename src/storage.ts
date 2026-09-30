@@ -1,4 +1,5 @@
 import type { Attempt, Quiz, QuizResult } from "./models";
+import { clearReadingPositions } from "./readingPosition";
 
 const QUIZZES_KEY = "quiz-platform:quizzes";
 const ATTEMPTS_KEY = "quiz-platform:attempts";
@@ -6,9 +7,10 @@ const RESULTS_KEY = "quiz-platform:results";
 const QUIZ_UPDATED_KEY = "quiz-platform:quiz-updated-at";
 const DELETED_QUIZZES_KEY = "quiz-platform:deleted-quizzes";
 const MODIFIED_KEY = "quiz-platform:modified-at";
+const SNAPSHOT_VERSION_KEY = "quiz-platform:snapshot-version";
 
 export type StorageSnapshot = {
-  schemaVersion: 1;
+  schemaVersion: 1 | 2;
   quizzes: Quiz[];
   attempts: Record<string, Attempt>;
   results: Record<string, QuizResult>;
@@ -33,6 +35,17 @@ function readValue<T>(key: string, fallback: T): T {
 
 function writeValue<T>(key: string, value: T): void {
   localStorage.setItem(key, JSON.stringify(value));
+}
+
+function writeChanges(changes: Map<string, string>): void {
+  const previous = new Map(Array.from(changes.keys(), (key) => [key, localStorage.getItem(key)]));
+  try {
+    for (const [key, value] of changes) localStorage.setItem(key, value);
+  } catch (error) {
+    for (const key of changes.keys()) localStorage.removeItem(key);
+    for (const [key, value] of previous) if (value !== null) localStorage.setItem(key, value);
+    throw error;
+  }
 }
 
 function markModified(): string {
@@ -65,13 +78,20 @@ export function saveQuiz(quiz: Quiz): { replaced: boolean } {
   const replaced = index >= 0;
   if (replaced) quizzes[index] = quiz;
   else quizzes.push(quiz);
-  writeValue(QUIZZES_KEY, quizzes);
   const updatedAt = readValue<Record<string, string>>(QUIZ_UPDATED_KEY, {});
-  updatedAt[quiz.id] = markModified();
-  writeValue(QUIZ_UPDATED_KEY, updatedAt);
+  const now = new Date().toISOString();
+  updatedAt[quiz.id] = now;
   const deletedAt = readValue<Record<string, string>>(DELETED_QUIZZES_KEY, {});
   delete deletedAt[quiz.id];
-  writeValue(DELETED_QUIZZES_KEY, deletedAt);
+  const changes = new Map<string, string>([
+    [QUIZZES_KEY, JSON.stringify(quizzes)],
+    [QUIZ_UPDATED_KEY, JSON.stringify(updatedAt)],
+    [DELETED_QUIZZES_KEY, JSON.stringify(deletedAt)],
+    [MODIFIED_KEY, now],
+  ]);
+  if (quiz.passages?.some((passage) => "format" in passage)) changes.set(SNAPSHOT_VERSION_KEY, "2");
+  writeChanges(changes);
+  if (replaced) clearReadingPositions(quiz.id);
   notifyStorageChange("local");
   return { replaced };
 }
@@ -111,6 +131,7 @@ export function clearQuizProgress(quizId: string): void {
 
 export function deleteQuiz(quizId: string): void {
   writeValue(QUIZZES_KEY, loadQuizzes().filter((quiz) => quiz.id !== quizId));
+  clearReadingPositions(quizId);
   const attempts = readValue<Record<string, Attempt>>(ATTEMPTS_KEY, {});
   const results = readValue<Record<string, QuizResult>>(RESULTS_KEY, {});
   const updatedAt = readValue<Record<string, string>>(QUIZ_UPDATED_KEY, {});
@@ -128,7 +149,7 @@ export function deleteQuiz(quizId: string): void {
 
 export function exportStorageSnapshot(): StorageSnapshot {
   return {
-    schemaVersion: 1,
+    schemaVersion: localStorage.getItem(SNAPSHOT_VERSION_KEY) === "2" ? 2 : 1,
     quizzes: loadQuizzes(),
     attempts: readValue<Record<string, Attempt>>(ATTEMPTS_KEY, {}),
     results: readValue<Record<string, QuizResult>>(RESULTS_KEY, {}),
@@ -139,11 +160,20 @@ export function exportStorageSnapshot(): StorageSnapshot {
 }
 
 export function importStorageSnapshot(snapshot: StorageSnapshot, source: StorageChangeSource = "cloud"): void {
-  writeValue(QUIZZES_KEY, snapshot.quizzes);
-  writeValue(ATTEMPTS_KEY, snapshot.attempts);
-  writeValue(RESULTS_KEY, snapshot.results);
-  writeValue(QUIZ_UPDATED_KEY, snapshot.quizUpdatedAt);
-  writeValue(DELETED_QUIZZES_KEY, snapshot.deletedQuizAt);
-  localStorage.setItem(MODIFIED_KEY, snapshot.modifiedAt);
+  const existing = new Map(loadQuizzes().map((quiz) => [quiz.id, JSON.stringify(quiz)]));
+  const changes = new Map<string, string>([
+    [QUIZZES_KEY, JSON.stringify(snapshot.quizzes)],
+    [ATTEMPTS_KEY, JSON.stringify(snapshot.attempts)],
+    [RESULTS_KEY, JSON.stringify(snapshot.results)],
+    [QUIZ_UPDATED_KEY, JSON.stringify(snapshot.quizUpdatedAt)],
+    [DELETED_QUIZZES_KEY, JSON.stringify(snapshot.deletedQuizAt)],
+    [MODIFIED_KEY, snapshot.modifiedAt],
+  ]);
+  if (snapshot.schemaVersion === 2) changes.set(SNAPSHOT_VERSION_KEY, "2");
+  writeChanges(changes);
+  for (const [quizId, value] of existing) {
+    const replacement = snapshot.quizzes.find((quiz) => quiz.id === quizId);
+    if (!replacement || JSON.stringify(replacement) !== value) clearReadingPositions(quizId);
+  }
   notifyStorageChange(source);
 }

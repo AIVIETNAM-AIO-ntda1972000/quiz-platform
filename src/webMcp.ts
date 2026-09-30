@@ -36,7 +36,7 @@ export function useWebMcp(quizzes: Quiz[], importQuiz: (payload: unknown, replac
     register({
       name: "import_quiz",
       title: "Import quiz",
-      description: "Local-browser integration: validate and import a schemaVersion 1 quiz into this device's quiz library.",
+      description: "Local-browser integration: validate and import a schemaVersion 1 or 2 quiz into this device's quiz library.",
       inputSchema: {
         type: "object",
         properties: {

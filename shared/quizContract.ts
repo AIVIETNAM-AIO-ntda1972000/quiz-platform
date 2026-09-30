@@ -1,5 +1,61 @@
 import { z } from "zod";
+import { unified } from "unified";
+import remarkParse from "remark-parse";
+import { visit } from "unist-util-visit";
 import type { QuizFile } from "../src/models.ts";
+
+export const MAX_RICH_QUIZ_BYTES = 1_048_576;
+const MAX_IMAGE_BYTES = 262_144;
+const MAX_TOTAL_IMAGE_BYTES = 524_288;
+const MAX_MARKDOWN_BYTES = 102_400;
+const imageMimeTypes = ["image/png", "image/jpeg", "image/webp"] as const;
+const assetId = /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$/;
+
+function decodedImageLength(base64: string, mimeType: typeof imageMimeTypes[number]): number | undefined {
+  if (!/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(base64)) return undefined;
+  try {
+    const binary = atob(base64);
+    const bytes = Array.from(binary.slice(0, 12), (value) => value.charCodeAt(0));
+    const png = [137, 80, 78, 71, 13, 10, 26, 10];
+    const jpeg = [255, 216, 255];
+    const valid = mimeType === "image/png" ? png.every((byte, index) => bytes[index] === byte)
+      : mimeType === "image/jpeg" ? jpeg.every((byte, index) => bytes[index] === byte)
+        : binary.slice(0, 4) === "RIFF" && binary.slice(8, 12) === "WEBP";
+    return valid ? binary.length : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function checkMarkdown(content: string, assets: Set<string>, path: (string | number)[], context: z.RefinementCtx): void {
+  const root = unified().use(remarkParse).parse(content);
+  visit(root, "html", () => context.addIssue({ code: "custom", path, message: "Raw HTML is not allowed in Markdown" }));
+  visit(root, "imageReference", () => context.addIssue({ code: "custom", path, message: "Use inline quiz-asset image references" }));
+  visit(root, "linkReference", () => context.addIssue({ code: "custom", path, message: "Use inline HTTPS or heading links" }));
+  visit(root, "image", (image) => {
+    if (!image.url.startsWith("quiz-asset:") || !assets.has(image.url.slice("quiz-asset:".length))) {
+      context.addIssue({ code: "custom", path, message: `Image must reference an embedded asset: ${image.url}` });
+    }
+    if (!image.alt?.trim()) context.addIssue({ code: "custom", path, message: "Images need descriptive alt text" });
+  });
+  visit(root, "link", (link) => {
+    if (!link.url.startsWith("#") && !/^https:\/\/[^\s]+$/i.test(link.url)) {
+      context.addIssue({ code: "custom", path, message: `Link must use HTTPS or a heading anchor: ${link.url}` });
+    }
+  });
+  visit(root, "code", (code) => {
+    if (code.lang?.toLowerCase() !== "mermaid") return;
+    if (new TextEncoder().encode(code.value).byteLength > 10_000) {
+      context.addIssue({ code: "custom", path, message: "Mermaid diagrams must be at most 10 KB" });
+    }
+    if (!/^(?:flowchart|graph|sequenceDiagram|classDiagram|stateDiagram(?:-v2)?|erDiagram)\b/.test(code.value.trim())) {
+      context.addIssue({ code: "custom", path, message: "Unsupported Mermaid diagram type" });
+    }
+    if (/\b(?:https?|data|javascript):/i.test(code.value) || /\bclick\s+\w+/i.test(code.value) || /%%\{/.test(code.value)) {
+      context.addIssue({ code: "custom", path, message: "Mermaid external resources and configuration directives are not allowed" });
+    }
+  });
+}
 
 const nonEmptyText = z.string().trim().min(1, "Required");
 const optionSchema = z.object({ id: nonEmptyText, text: nonEmptyText }).strict();
@@ -77,24 +133,60 @@ const readingPassageSchema = z.object({
   paragraphs: z.array(nonEmptyText).min(1, "Add at least one passage paragraph").max(30, "Use at most thirty passage paragraphs"),
 }).strict();
 
-export const quizFileSchema = z.object({
-  schemaVersion: z.literal(1, { error: "Only schemaVersion 1 is supported" }),
-  quiz: z.object({
-    id: nonEmptyText,
-    title: nonEmptyText,
-    description: nonEmptyText.optional(),
-    learningMaterial: learningMaterialSchema.optional(),
-    passages: z.array(readingPassageSchema).min(1, "Add at least one passage").max(20, "Use at most twenty passages").optional(),
-    questions: z.array(z.discriminatedUnion("type", [singleChoiceSchema, multipleChoiceSchema, shortTextSchema])).min(1, "Add at least one question"),
-  }).strict(),
-}).strict().superRefine((data, context) => {
+const passageImageSchema = z.object({
+  id: z.string().regex(assetId, "Use 1–64 letters, numbers, dashes, or underscores"),
+  mimeType: z.enum(imageMimeTypes),
+  base64: z.string().min(1).max(Math.ceil(MAX_IMAGE_BYTES * 4 / 3) + 4),
+}).strict();
+
+const markdownPassageSchema = z.object({
+  id: nonEmptyText,
+  title: nonEmptyText,
+  format: z.literal("markdown"),
+  content: nonEmptyText,
+  assets: z.array(passageImageSchema).optional(),
+}).strict();
+
+const quizFields = <T extends typeof readingPassageSchema | z.ZodUnion<[typeof readingPassageSchema, typeof markdownPassageSchema]>>(passages: T) => z.object({
+  id: nonEmptyText,
+  title: nonEmptyText,
+  description: nonEmptyText.optional(),
+  learningMaterial: learningMaterialSchema.optional(),
+  passages: z.array(passages).min(1, "Add at least one passage").max(20, "Use at most twenty passages").optional(),
+  questions: z.array(z.discriminatedUnion("type", [singleChoiceSchema, multipleChoiceSchema, shortTextSchema])).min(1, "Add at least one question"),
+}).strict();
+
+export const quizFileSchema = z.discriminatedUnion("schemaVersion", [
+  z.object({ schemaVersion: z.literal(1), quiz: quizFields(readingPassageSchema) }).strict(),
+  z.object({ schemaVersion: z.literal(2), quiz: quizFields(z.union([readingPassageSchema, markdownPassageSchema])) }).strict(),
+]).superRefine((data, context) => {
+  if (data.schemaVersion === 2 && new TextEncoder().encode(JSON.stringify(data)).byteLength > MAX_RICH_QUIZ_BYTES) {
+    context.addIssue({ code: "custom", path: [], message: "Version 2 quiz exceeds the 1 MiB JSON limit" });
+  }
   const passageIds = new Set<string>();
+  let totalImageBytes = 0;
   data.quiz.passages?.forEach((passage, passageIndex) => {
     if (passageIds.has(passage.id)) {
       context.addIssue({ code: "custom", path: ["quiz", "passages", passageIndex, "id"], message: `Duplicate passage id: ${passage.id}` });
     }
     passageIds.add(passage.id);
+    if (!("format" in passage)) return;
+    const contentPath = ["quiz", "passages", passageIndex, "content"];
+    if (new TextEncoder().encode(passage.content).byteLength > MAX_MARKDOWN_BYTES) {
+      context.addIssue({ code: "custom", path: contentPath, message: "Markdown passage must be at most 100 KiB" });
+    }
+    const imageIds = new Set<string>();
+    passage.assets?.forEach((asset, imageIndex) => {
+      if (imageIds.has(asset.id)) context.addIssue({ code: "custom", path: ["quiz", "passages", passageIndex, "assets", imageIndex, "id"], message: `Duplicate image asset id: ${asset.id}` });
+      imageIds.add(asset.id);
+      const decodedLength = decodedImageLength(asset.base64, asset.mimeType);
+      if (decodedLength === undefined || decodedLength > MAX_IMAGE_BYTES) {
+        context.addIssue({ code: "custom", path: ["quiz", "passages", passageIndex, "assets", imageIndex, "base64"], message: "Invalid image data or image exceeds 256 KiB" });
+      } else totalImageBytes += decodedLength;
+    });
+    checkMarkdown(passage.content, imageIds, contentPath, context);
   });
+  if (totalImageBytes > MAX_TOTAL_IMAGE_BYTES) context.addIssue({ code: "custom", path: ["quiz", "passages"], message: "Embedded images exceed 512 KiB per quiz" });
 
   const sectionIds = new Set<string>();
   data.quiz.learningMaterial?.sections.forEach((section, sectionIndex) => {

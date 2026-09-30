@@ -1,6 +1,6 @@
 # Quiz JSON format
 
-Each file contains exactly one quiz and uses `schemaVersion: 1`. See [`public/examples/basic-math.json`](../public/examples/basic-math.json) for a general example and [`public/examples/reading-practice.json`](../public/examples/reading-practice.json) for a passage shared by multiple questions.
+Each file contains exactly one quiz. Use `schemaVersion: 1` for the original plain-text contract or `schemaVersion: 2` for Markdown passages. See [`public/examples/basic-math.json`](../public/examples/basic-math.json) for a general example, [`public/examples/reading-practice.json`](../public/examples/reading-practice.json) for a plain shared passage, and [`public/examples/rich-reading.json`](../public/examples/rich-reading.json) for a Markdown passage.
 
 The same contract and validator apply to every creation path:
 
@@ -127,6 +127,32 @@ Use `passages` when several questions refer to the same source text, such as an 
 ```
 
 Each passage requires a unique non-empty `id`, a non-empty `title`, and one to thirty non-empty `paragraphs`. A quiz can have one to twenty passages. If a question has `passageId`, that ID must exist in `quiz.passages`; otherwise import fails with a field-level error. Unlinked questions and quizzes without passages remain valid. Paragraphs are displayed as plain text, so HTML and external images are not supported.
+
+### Markdown passages (schema version 2)
+
+Version 2 keeps the same quiz and question fields. Each passage may use either the plain `paragraphs` shape above or this Markdown shape:
+
+```json
+{
+  "id": "network-guide",
+  "title": "How a network learns",
+  "format": "markdown",
+  "content": "# Training\n\nA model updates its **weights**.\n\n$L = (y - \\hat y)^2$",
+  "assets": [
+    { "id": "figure-1", "mimeType": "image/png", "base64": "BASE64_OF_A_REAL_SMALL_PNG" }
+  ]
+}
+```
+
+The code block above illustrates field placement; its placeholder image is not importable. Refer to an asset in Markdown with `![Descriptive alt text](quiz-asset:figure-1)`. Images must be actual PNG, JPEG, or WebP bytes encoded as base64. Remote images, SVG, raw HTML, JavaScript URLs, reference-style links/images, MDX, and executable code are rejected. Ordinary links must use HTTPS or a heading anchor. Asset IDs must be unique within their passage.
+
+Markdown supports headings, lists, tables, fenced code, `$inline math$`, `$$display math$$`, and fenced `mermaid` blocks for flowchart, sequence, class, state, or ER diagrams. Invalid diagrams show a readable source fallback. Full LaTeX documents and other diagram languages are not supported. Markdown content is limited to 100 KiB per passage; images to 256 KiB each and 512 KiB total per quiz; and the complete version 2 JSON file to 1 MiB. Keep diagrams under 10 KiB. The app packages its rendering code and KaTeX fonts for offline use.
+
+To create rich material with AI, use [`public/AI_RICH_PROMPT.md`](../public/AI_RICH_PROMPT.md). Ask the chatbot for Mermaid rather than invented image base64. If a real image is needed, encode a local PNG/JPEG/WebP file and place its data in `assets`; the quiz and images then import and synchronize together. Because assets use browser storage, importing many image-heavy quizzes can reach a device's quota; a failed import keeps the previous quiz and progress.
+
+On Windows PowerShell, `[Convert]::ToBase64String([IO.File]::ReadAllBytes('diagram.png'))` produces the `base64` value for a local PNG file. Use the corresponding MIME type and a unique asset ID. The app will reject a file whose actual bytes do not match the declared type.
+
+Reading position is kept only on the current device and is cleared if the quiz is replaced or deleted. On results, correct answers and explanations are initially hidden behind **Show answers**; score, your response, and correctness remain visible.
 
 ## Question types
 

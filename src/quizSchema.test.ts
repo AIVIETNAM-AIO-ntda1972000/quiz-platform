@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import downloadableExample from "../public/examples/basic-math.json";
 import readingExample from "../public/examples/reading-practice.json";
+import richExample from "../public/examples/rich-reading.json";
 import decisionTreeQuiz from "../sample-quizzes/decision-tree-practical-work.json";
 import vietnameseAiQuiz from "../sample-quizzes/kien-thuc-ai-co-ban.json";
 import { exampleQuizFile } from "./exampleQuiz";
+import type { MarkdownReadingPassage } from "./models";
 import { parseQuizJson, validateQuizFile } from "./quizSchema";
 
 describe("quiz validation", () => {
@@ -50,6 +52,43 @@ describe("quiz validation", () => {
     expect(readingExample.quiz.questions.map((question) => question.passageId)).toEqual([
       "wetlands", "wetlands", "wetlands", "wetlands"
     ]);
+  });
+
+  it("accepts a version 2 Markdown passage and keeps version 1 strict", () => {
+    expect(validateQuizFile(richExample).success).toBe(true);
+    expect(validateQuizFile({ ...richExample, schemaVersion: 1 }).success).toBe(false);
+  });
+
+  it.each([
+    ["remote image", "![Chart](https://example.com/chart.png)"],
+    ["raw HTML", "<script>alert(1)</script>"],
+    ["unsafe link", "[Click](javascript:alert(1))"],
+    ["unsupported diagram", "```mermaid\npie\n  1: 2\n```"],
+    ["Mermaid remote resource", "```mermaid\nflowchart LR\n  A[https://example.com/image.png] --> B\n```"],
+  ])("rejects %s in rich material", (_name, content) => {
+    const invalid = structuredClone(richExample);
+    invalid.quiz.passages[0].content = content;
+    expect(validateQuizFile(invalid).success).toBe(false);
+  });
+
+  it("rejects duplicate, missing, and disguised image assets", () => {
+    const invalid = structuredClone(richExample);
+    invalid.quiz.passages[0].content += "\n![Figure](quiz-asset:figure)";
+    const passage = invalid.quiz.passages[0] as MarkdownReadingPassage;
+    passage.assets = [
+      { id: "figure", mimeType: "image/png", base64: "PHN2Zz48L3N2Zz4=" },
+      { id: "figure", mimeType: "image/png", base64: "PHN2Zz48L3N2Zz4=" },
+    ];
+    const result = validateQuizFile(invalid);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.errors.some((error) => error.includes("Duplicate image asset id"))).toBe(true);
+      expect(result.errors.some((error) => error.includes("Invalid image data"))).toBe(true);
+    }
+    passage.assets = [];
+    const missing = validateQuizFile(invalid);
+    expect(missing.success).toBe(false);
+    if (!missing.success) expect(missing.errors.some((error) => error.includes("embedded asset"))).toBe(true);
   });
 
   it("rejects duplicate passage ids and missing passage references", () => {
