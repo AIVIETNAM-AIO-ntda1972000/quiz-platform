@@ -89,7 +89,8 @@ export function saveQuiz(quiz: Quiz): { replaced: boolean } {
     [DELETED_QUIZZES_KEY, JSON.stringify(deletedAt)],
     [MODIFIED_KEY, now],
   ]);
-  if (quiz.passages?.some((passage) => "format" in passage)) changes.set(SNAPSHOT_VERSION_KEY, "2");
+  if (quiz.passages?.some((passage) => "format" in passage)
+    || (quiz.learningMaterial && "passageId" in quiz.learningMaterial)) changes.set(SNAPSHOT_VERSION_KEY, "2");
   writeChanges(changes);
   if (replaced) clearReadingPositions(quiz.id);
   notifyStorageChange("local");

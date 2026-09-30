@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { exampleQuizFile } from "./exampleQuiz";
 import type { Quiz } from "./models";
 import richExample from "../public/examples/rich-reading.json";
+import readingExample from "../public/examples/reading-practice.json";
 import { loadReadingPosition, saveReadingPosition } from "./readingPosition";
 import { clearQuizProgress, deleteQuiz, exportStorageSnapshot, initializeQuizLibrary, loadAttempt, loadQuizzes, loadResult, saveAttempt, saveQuiz, saveResult } from "./storage";
 
@@ -51,6 +52,11 @@ describe("local persistence", () => {
     saveQuiz(richExample.quiz as Quiz);
     expect(exportStorageSnapshot().schemaVersion).toBe(2);
     deleteQuiz(richExample.quiz.id);
+    expect(exportStorageSnapshot().schemaVersion).toBe(2);
+  });
+
+  it("promotes a linked learning document even when its passage uses plain text", () => {
+    saveQuiz({ ...readingExample.quiz, learningMaterial: { passageId: "wetlands" } } as Quiz);
     expect(exportStorageSnapshot().schemaVersion).toBe(2);
   });
 

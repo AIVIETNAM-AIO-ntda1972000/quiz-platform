@@ -7,10 +7,11 @@ const MarkdownPassage = lazy(() => import("./MarkdownPassage").then((module) => 
 type ReadingPassageDialogProps = {
   quizId: string;
   passage: ReadingPassage;
+  purpose?: "question" | "learning";
   onClose: () => void;
 };
 
-export function ReadingPassageDialog({ quizId, passage, onClose }: ReadingPassageDialogProps) {
+export function ReadingPassageDialog({ quizId, passage, purpose = "question", onClose }: ReadingPassageDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -66,10 +67,10 @@ export function ReadingPassageDialog({ quizId, passage, onClose }: ReadingPassag
     <dialog ref={dialogRef} className="reading-dialog" aria-labelledby={titleId} onClose={() => { recordPosition(); onClose(); }}>
       <div className="reading-dialog-header">
         <div>
-          <p className="eyebrow">READING PASSAGE</p>
+          <p className="eyebrow">{purpose === "learning" ? "LEARNING MATERIAL" : "READING PASSAGE"}</p>
           <h2 id={titleId}>{passage.title}</h2>
         </div>
-        <button className="secondary-button" type="button" onClick={() => dialogRef.current?.close()}>Close passage</button>
+        <button className="secondary-button" type="button" onClick={() => dialogRef.current?.close()}>{purpose === "learning" ? "Close material" : "Close passage"}</button>
       </div>
       <div className="reading-dialog-body" ref={bodyRef} onScroll={handleScroll}>
         <div ref={contentRef} className="reading-content">

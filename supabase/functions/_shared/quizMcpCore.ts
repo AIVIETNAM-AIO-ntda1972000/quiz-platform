@@ -11,6 +11,7 @@ export const QUIZ_CREATION_INSTRUCTIONS = [
   "Use unique quiz, question, option, and learning-section IDs.",
   "Choice answers must reference existing option IDs.",
   "learningMaterial is optional but recommended for teaching-oriented quizzes.",
+  "In version 2, learningMaterial may be { passageId: an existing passage ID } so the same document opens from the library and from questions.",
   "For reading practice, define quiz.passages once and link any number of questions with passageId; never repeat the passage in each question.",
   "Version 2 Markdown passages use format markdown, content, and optional embedded PNG/JPEG/WebP assets; images must use quiz-asset:id URLs. Raw HTML and remote images are forbidden.",
   "Call validate_quiz before publish_quiz. Publishing creates a pending draft that the user must accept in the AI Inbox.",
@@ -42,7 +43,8 @@ export const QUIZ_CONTRACT = {
     rules: ["type must be shortText", "at least one non-empty accepted answer"],
   },
   learningMaterial: {
-    required: ["title", "sections"],
+    structuredRequired: ["title", "sections"],
+    version2Reference: { required: ["passageId"], rule: "Must reference an existing quiz passage" },
     sectionRequired: ["id", "title", "paragraphs"],
     illustrationTypes: ["flow", "comparison", "distribution"],
   },

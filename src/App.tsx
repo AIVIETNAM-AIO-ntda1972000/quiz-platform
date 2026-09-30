@@ -4,7 +4,7 @@ import { exampleQuizFile } from "./exampleQuiz";
 import { gradeQuiz, isCorrect } from "./grading";
 import { LearningGuide } from "./LearningGuide";
 import { QuizInbox } from "./QuizInboxPanel";
-import type { Answer, Attempt, Question, Quiz, QuizResult, ReadingPassage } from "./models";
+import { isLearningMaterialReference, type Answer, type Attempt, type Question, type Quiz, type QuizResult, type ReadingPassage } from "./models";
 import { useOAuthGrants } from "./oauthGrants";
 import { useQuizInbox, type QuizInboxItem } from "./quizInbox";
 import { parseQuizJson, validateQuizFile } from "./quizSchema";
@@ -43,7 +43,7 @@ export default function App() {
   const [attempt, setAttempt] = useState<Attempt>();
   const [result, setResult] = useState<QuizResult>();
   const [showAnswers, setShowAnswers] = useState(false);
-  const [openPassage, setOpenPassage] = useState<ReadingPassage>();
+  const [openPassage, setOpenPassage] = useState<{ passage: ReadingPassage; purpose: "question" | "learning" }>();
   const [importErrors, setImportErrors] = useState<string[]>([]);
   const [inboxError, setInboxError] = useState("");
   const [pastedJson, setPastedJson] = useState("");
@@ -121,6 +121,12 @@ export default function App() {
 
   const openLearningMaterial = (quiz: Quiz) => {
     setActiveQuiz(quiz);
+    const material = quiz.learningMaterial;
+    if (material && isLearningMaterialReference(material)) {
+      const passage = quiz.passages?.find((item) => item.id === material.passageId);
+      if (passage) setOpenPassage({ passage, purpose: "learning" });
+      return;
+    }
     setScreen("learn");
   };
 
@@ -262,7 +268,7 @@ export default function App() {
             <div>
               <p className="eyebrow">YOUR QUIZ LIBRARY</p>
               <h1 ref={headingRef} tabIndex={-1}>What will you learn today?</h1>
-              <p>Import an AI-generated quiz with an optional study guide, practise at your pace, and keep your progress on this device.</p>
+              <p>Import an AI-generated quiz with optional learning material, practise at your pace, and keep your progress on this device.</p>
             </div>
             <div className="welcome-actions">
               {cloud.user && <button className="secondary-button" type="button" onClick={() => setScreen("inbox")}>AI inbox{inbox.items.length ? ` (${inbox.items.length})` : ""}</button>}
@@ -301,7 +307,7 @@ export default function App() {
                   </div>
                   <div className="card-actions">
                     {quiz.learningMaterial && (
-                      <button className="study-button" type="button" onClick={() => openLearningMaterial(quiz)} aria-label={`Study ${quiz.title}`}>Study guide</button>
+                      <button className="study-button" type="button" onClick={() => openLearningMaterial(quiz)} aria-label={`Learning material for ${quiz.title}`}>Learning material</button>
                     )}
                     {latest && <button className="study-button" type="button" onClick={() => reviewResult(quiz, latest)} aria-label={`Review ${quiz.title}`}>Review results</button>}
                     <button className="arrow-button" type="button" onClick={() => startQuiz(quiz)} aria-label={`${saved ? "Resume" : "Start"} ${quiz.title}`}>
@@ -322,7 +328,7 @@ export default function App() {
         </main>
       )}
 
-      {screen === "learn" && activeQuiz?.learningMaterial && (
+      {screen === "learn" && activeQuiz?.learningMaterial && !isLearningMaterialReference(activeQuiz.learningMaterial) && (
         <LearningGuide material={activeQuiz.learningMaterial} quizTitle={activeQuiz.title} onBack={goHome} />
       )}
 
@@ -398,7 +404,7 @@ export default function App() {
           <label className="file-drop">
             <span className="upload-icon" aria-hidden="true">↑</span>
             <strong>Choose a JSON file</strong>
-              <span>One quiz with optional study guide and reading materials per file · processed locally</span>
+              <span>One quiz with optional learning material and reading passages per file · processed locally</span>
             <input aria-label="Choose a JSON file" type="file" accept="application/json,.json" onChange={(event) => { void handleFile(event.target.files?.[0]); event.currentTarget.value = ""; }} />
           </label>
           <div className="import-divider" aria-hidden="true"><span>or paste JSON</span></div>
@@ -456,7 +462,7 @@ export default function App() {
             <section className="question-panel">
               <p className="eyebrow">{question.type === "singleChoice" ? "CHOOSE ONE ANSWER" : question.type === "multipleChoice" ? "CHOOSE ALL THAT APPLY" : "TYPE YOUR ANSWER"}</p>
               <h1 ref={headingRef} tabIndex={-1}>{question.prompt}</h1>
-              {passage && <button className="passage-button" type="button" onClick={() => setOpenPassage(passage)}>Read passage: {passage.title}</button>}
+              {passage && <button className="passage-button" type="button" onClick={() => setOpenPassage({ passage, purpose: "question" })}>Read passage: {passage.title}</button>}
               {question.type === "shortText" ? (
                 <label className="text-answer">
                   <span>Your answer</span>
@@ -521,7 +527,7 @@ export default function App() {
                   <div>
                     <span className="card-label">QUESTION {index + 1}</span>
                     <h3>{question.prompt}</h3>
-                    {passage && <button className="passage-button" type="button" onClick={() => setOpenPassage(passage)}>Read passage: {passage.title}</button>}
+                    {passage && <button className="passage-button" type="button" onClick={() => setOpenPassage({ passage, purpose: "question" })}>Read passage: {passage.title}</button>}
                     <p><b>Your answer:</b> {userAnswerText(question, answer)}</p>
                     {showAnswers && <p><b>Correct answer:</b> {correctAnswerText(question)}</p>}
                     {showAnswers && question.explanation && <p className="explanation">{question.explanation}</p>}
@@ -536,7 +542,7 @@ export default function App() {
           </div>
         </main>
       )}
-      {openPassage && activeQuiz && <ReadingPassageDialog quizId={activeQuiz.id} passage={openPassage} onClose={() => setOpenPassage(undefined)} />}
+      {openPassage && activeQuiz && <ReadingPassageDialog quizId={activeQuiz.id} passage={openPassage.passage} purpose={openPassage.purpose} onClose={() => setOpenPassage(undefined)} />}
     </div>
   );
 }

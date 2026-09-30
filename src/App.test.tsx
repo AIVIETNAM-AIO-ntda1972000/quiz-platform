@@ -3,6 +3,8 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import readingExample from "../public/examples/reading-practice.json";
+import type { Quiz } from "./models";
+import { saveQuiz } from "./storage";
 
 describe("Quiz Platform", () => {
   beforeEach(() => {
@@ -61,9 +63,38 @@ describe("Quiz Platform", () => {
     await user.upload(input, new File([JSON.stringify(valid)], "science.json", { type: "application/json" }));
     expect(await screen.findByText("Science")).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("imported");
-    await user.click(screen.getByRole("button", { name: "Study Science" }));
+    await user.click(screen.getByRole("button", { name: "Learning material for Science" }));
     expect(screen.getByRole("heading", { name: "Science essentials" })).toBeInTheDocument();
     expect(screen.getByRole("img", { name: "Flow diagram" })).toHaveTextContent("Experiment");
+  });
+
+  it("opens a linked document from the library without starting a quiz", async () => {
+    Object.defineProperty(HTMLDialogElement.prototype, "showModal", {
+      configurable: true,
+      value(this: HTMLDialogElement) { this.setAttribute("open", ""); }
+    });
+    Object.defineProperty(HTMLDialogElement.prototype, "close", {
+      configurable: true,
+      value(this: HTMLDialogElement) {
+        this.removeAttribute("open");
+        this.dispatchEvent(new Event("close"));
+      }
+    });
+    saveQuiz({
+      id: "lesson-quiz",
+      title: "Lesson Quiz",
+      learningMaterial: { passageId: "lesson" },
+      passages: [{ id: "lesson", title: "Short lesson", paragraphs: ["Read this lesson first."] }],
+      questions: [{ id: "q1", type: "shortText", prompt: "Ready?", acceptedAnswers: ["yes"] }],
+    } satisfies Quiz);
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: "Learning material for Lesson Quiz" }));
+    expect(screen.getByRole("dialog", { name: "Short lesson" })).toHaveTextContent("Read this lesson first.");
+    expect(screen.getByText("LEARNING MATERIAL")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Close material" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Start Lesson Quiz" })).toBeInTheDocument();
   });
 
   it("validates and imports JSON pasted from a chatbot", async () => {

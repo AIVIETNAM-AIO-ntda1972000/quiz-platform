@@ -127,6 +127,8 @@ const learningMaterialSchema = z.object({
   }).strict()).min(1, "Add at least one learning section").max(30, "Use at most thirty learning sections"),
 }).strict();
 
+const learningMaterialReferenceSchema = z.object({ passageId: nonEmptyText }).strict();
+
 const readingPassageSchema = z.object({
   id: nonEmptyText,
   title: nonEmptyText,
@@ -147,18 +149,24 @@ const markdownPassageSchema = z.object({
   assets: z.array(passageImageSchema).optional(),
 }).strict();
 
-const quizFields = <T extends typeof readingPassageSchema | z.ZodUnion<[typeof readingPassageSchema, typeof markdownPassageSchema]>>(passages: T) => z.object({
+const quizFields = {
   id: nonEmptyText,
   title: nonEmptyText,
   description: nonEmptyText.optional(),
-  learningMaterial: learningMaterialSchema.optional(),
-  passages: z.array(passages).min(1, "Add at least one passage").max(20, "Use at most twenty passages").optional(),
   questions: z.array(z.discriminatedUnion("type", [singleChoiceSchema, multipleChoiceSchema, shortTextSchema])).min(1, "Add at least one question"),
-}).strict();
+};
 
 export const quizFileSchema = z.discriminatedUnion("schemaVersion", [
-  z.object({ schemaVersion: z.literal(1), quiz: quizFields(readingPassageSchema) }).strict(),
-  z.object({ schemaVersion: z.literal(2), quiz: quizFields(z.union([readingPassageSchema, markdownPassageSchema])) }).strict(),
+  z.object({ schemaVersion: z.literal(1), quiz: z.object({
+    ...quizFields,
+    learningMaterial: learningMaterialSchema.optional(),
+    passages: z.array(readingPassageSchema).min(1, "Add at least one passage").max(20, "Use at most twenty passages").optional(),
+  }).strict() }).strict(),
+  z.object({ schemaVersion: z.literal(2), quiz: z.object({
+    ...quizFields,
+    learningMaterial: z.union([learningMaterialSchema, learningMaterialReferenceSchema]).optional(),
+    passages: z.array(z.union([readingPassageSchema, markdownPassageSchema])).min(1, "Add at least one passage").max(20, "Use at most twenty passages").optional(),
+  }).strict() }).strict(),
 ]).superRefine((data, context) => {
   if (data.schemaVersion === 2 && new TextEncoder().encode(JSON.stringify(data)).byteLength > MAX_RICH_QUIZ_BYTES) {
     context.addIssue({ code: "custom", path: [], message: "Version 2 quiz exceeds the 1 MiB JSON limit" });
@@ -189,7 +197,10 @@ export const quizFileSchema = z.discriminatedUnion("schemaVersion", [
   if (totalImageBytes > MAX_TOTAL_IMAGE_BYTES) context.addIssue({ code: "custom", path: ["quiz", "passages"], message: "Embedded images exceed 512 KiB per quiz" });
 
   const sectionIds = new Set<string>();
-  data.quiz.learningMaterial?.sections.forEach((section, sectionIndex) => {
+  if (data.quiz.learningMaterial && "passageId" in data.quiz.learningMaterial && !passageIds.has(data.quiz.learningMaterial.passageId)) {
+    context.addIssue({ code: "custom", path: ["quiz", "learningMaterial", "passageId"], message: `Passage id does not exist: ${data.quiz.learningMaterial.passageId}` });
+  }
+  if (data.quiz.learningMaterial && "sections" in data.quiz.learningMaterial) data.quiz.learningMaterial.sections.forEach((section, sectionIndex) => {
     if (sectionIds.has(section.id)) {
       context.addIssue({ code: "custom", path: ["quiz", "learningMaterial", "sections", sectionIndex, "id"], message: `Duplicate learning section id: ${section.id}` });
     }
