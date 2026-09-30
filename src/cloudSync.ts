@@ -124,21 +124,21 @@ export function mergeStorageSnapshots(local: StorageSnapshot, remote: StorageSna
   });
 
   const modifiedAt = timestamp(local.modifiedAt) >= timestamp(remote.modifiedAt) ? local.modifiedAt : remote.modifiedAt;
-  return { schemaVersion: 1, quizzes, attempts, results, quizUpdatedAt, deletedQuizAt, modifiedAt };
+  return { schemaVersion: Math.max(local.schemaVersion, remote.schemaVersion) as 1 | 2, quizzes, attempts, results, quizUpdatedAt, deletedQuizAt, modifiedAt };
 }
 
 function parseSnapshot(value: unknown): StorageSnapshot | undefined {
   if (!value || typeof value !== "object") return undefined;
   const data = value as Partial<StorageSnapshot>;
-  if (data.schemaVersion !== 1 || !Array.isArray(data.quizzes) || typeof data.modifiedAt !== "string") return undefined;
+  if ((data.schemaVersion !== 1 && data.schemaVersion !== 2) || !Array.isArray(data.quizzes) || typeof data.modifiedAt !== "string") return undefined;
   const quizzes: Quiz[] = [];
   for (const quiz of data.quizzes) {
-    const validation = validateQuizFile({ schemaVersion: 1, quiz });
+    const validation = validateQuizFile({ schemaVersion: data.schemaVersion, quiz });
     if (!validation.success) return undefined;
     quizzes.push(validation.data.quiz);
   }
   return {
-    schemaVersion: 1,
+    schemaVersion: data.schemaVersion,
     quizzes,
     attempts: data.attempts && typeof data.attempts === "object" ? data.attempts : {},
     results: data.results && typeof data.results === "object" ? data.results : {},
@@ -167,6 +167,14 @@ export function useCloudSync(onCloudData: () => void): CloudSyncState {
     }
     setStatus("syncing");
     const snapshot = exportStorageSnapshot();
+    if (snapshot.schemaVersion === 2) {
+      const { data: capability, error: capabilityError } = await supabase.rpc("quiz_sync_capability");
+      if (capabilityError || capability !== 2) {
+        setStatus("error");
+        setMessage("Rich quiz sync needs the Supabase schema version 2 migration. Local data is safe; ask the project owner to apply it.");
+        return;
+      }
+    }
     const snapshotSignature = stableSerialize(snapshot);
     lastPushedSnapshot.current = snapshotSignature;
     const { error } = await supabase.from("quiz_platform_data").upsert({
@@ -214,6 +222,11 @@ export function useCloudSync(onCloudData: () => void): CloudSyncState {
         }
 
         const remote = parseSnapshot(data?.data);
+        if (data?.data && !remote) {
+          setStatus("error");
+          setMessage("Cloud data uses an unsupported or invalid format. It was not overwritten; update this app or contact the project owner.");
+          return;
+        }
         if (!remote) {
           await pushSnapshot(activeUser);
           continue;
@@ -221,7 +234,12 @@ export function useCloudSync(onCloudData: () => void): CloudSyncState {
         const local = exportStorageSnapshot();
         const merged = mergeStorageSnapshots(local, remote);
         if (!storageSnapshotsEqual(merged, local)) {
-          importStorageSnapshot(merged, "cloud");
+          try { importStorageSnapshot(merged, "cloud"); }
+          catch {
+            setStatus("error");
+            setMessage("Device storage is full. Cloud data was not applied; remove unused quizzes or free device space.");
+            return;
+          }
           onCloudData();
         }
         if (!storageSnapshotsEqual(merged, remote)) await pushSnapshot(activeUser);

@@ -106,6 +106,12 @@ describe("Quiz Platform", () => {
     await user.click(screen.getByRole("button", { name: "Finish quiz" }));
     expect(screen.getByText("100%")).toBeInTheDocument();
     expect(screen.getAllByLabelText("Correct")).toHaveLength(3);
+    expect(screen.queryByText("Correct answer:")).not.toBeInTheDocument();
+    const answerToggle = screen.getByRole("button", { name: "Show answers" });
+    answerToggle.focus();
+    await user.keyboard("[Space]");
+    expect(screen.getAllByText("Correct answer:")).toHaveLength(3);
+    expect(screen.getByRole("button", { name: "Hide answers" })).toHaveAttribute("aria-pressed", "true");
     await user.click(screen.getByRole("button", { name: "Try again" }));
     expect(screen.getByText("Question 1 of 3")).toBeInTheDocument();
   });

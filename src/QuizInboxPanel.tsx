@@ -1,4 +1,7 @@
+import { lazy, Suspense } from "react";
 import type { QuizInboxItem } from "./quizInbox";
+
+const MarkdownPassage = lazy(() => import("./MarkdownPassage").then((module) => ({ default: module.MarkdownPassage })));
 
 type QuizInboxProps = {
   items: QuizInboxItem[];
@@ -43,7 +46,9 @@ export function QuizInbox({ items, loading, message, onAccept, onReject, onDelet
                 {quiz.passages?.map((passage) => (
                   <section className="inbox-passage" key={passage.id}>
                     <h3>{passage.title}</h3>
-                    {passage.paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}
+                    {"format" in passage
+                      ? <Suspense fallback={<p>Loading Markdown preview…</p>}><div className="reading-content"><MarkdownPassage passage={passage} onMediaReady={() => undefined} /></div></Suspense>
+                      : passage.paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}
                   </section>
                 ))}
                 <ol>{quiz.questions.map((question) => <li key={question.id}>{question.prompt}{question.passageId && <span> (passage: {question.passageId})</span>}</li>)}</ol>

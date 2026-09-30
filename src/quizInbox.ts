@@ -52,6 +52,7 @@ export type QuizInboxState = {
   message: string;
   refresh: () => Promise<void>;
   review: (id: string, status: Exclude<QuizInboxStatus, "pending">) => Promise<boolean>;
+  restorePending: (id: string) => Promise<boolean>;
   remove: (id: string) => Promise<boolean>;
 };
 
@@ -120,6 +121,18 @@ export function useQuizInbox(user?: User): QuizInboxState {
     return true;
   }, [user]);
 
+  const restorePending = useCallback(async (id: string): Promise<boolean> => {
+    if (!supabase || !user || !navigator.onLine) return false;
+    const { data, error } = await supabase.from("quiz_inbox")
+      .update({ status: "pending", reviewed_at: null })
+      .eq("id", id)
+      .eq("status", "accepted")
+      .select("id")
+      .maybeSingle();
+    await refresh();
+    return !error && Boolean(data);
+  }, [refresh, user]);
+
   useEffect(() => { void refresh(); }, [refresh]);
 
   useEffect(() => {
@@ -133,5 +146,5 @@ export function useQuizInbox(user?: User): QuizInboxState {
     return () => { if (channel) void client.removeChannel(channel); };
   }, [refresh, user]);
 
-  return { items, loading, message, refresh, review, remove };
+  return { items, loading, message, refresh, review, restorePending, remove };
 }

@@ -56,11 +56,21 @@ export type LearningMaterial = {
   sections: LearningSection[];
 };
 
-export type ReadingPassage = {
+export type PlainReadingPassage = {
   id: string;
   title: string;
   paragraphs: string[];
 };
+
+export type PassageImage = { id: string; mimeType: "image/png" | "image/jpeg" | "image/webp"; base64: string };
+export type MarkdownReadingPassage = {
+  id: string;
+  title: string;
+  format: "markdown";
+  content: string;
+  assets?: PassageImage[];
+};
+export type ReadingPassage = PlainReadingPassage | MarkdownReadingPassage;
 
 export type Quiz = {
   id: string;
@@ -70,7 +80,7 @@ export type Quiz = {
   passages?: ReadingPassage[];
   questions: Question[];
 };
-export type QuizFile = { schemaVersion: 1; quiz: Quiz };
+export type QuizFile = { schemaVersion: 1 | 2; quiz: Quiz };
 export type Answer = string | string[];
 export type Attempt = {
   quizId: string;

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { QuizFile } from "../../../src/models";
 import readingExample from "../../../public/examples/reading-practice.json";
+import richExample from "../../../public/examples/rich-reading.json";
 import {
   MAX_PENDING_QUIZZES,
   MAX_QUIZ_PAYLOAD_BYTES,
@@ -48,6 +49,15 @@ describe("quiz MCP core", () => {
   it("accepts a shared reading passage through the remote MCP validator", () => {
     const result = validateMcpQuiz(readingExample);
     expect(result.success).toBe(true);
+  });
+
+  it("validates rich Markdown through the same contract as the browser", () => {
+    expect(validateMcpQuiz(richExample).success).toBe(true);
+    const invalid = structuredClone(richExample);
+    invalid.quiz.passages[0].content = "![Remote](https://example.com/image.png)";
+    const result = validateMcpQuiz(invalid);
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.errors.some((error) => error.includes("embedded asset"))).toBe(true);
   });
 
   it("rejects payloads over the request limit", () => {

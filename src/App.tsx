@@ -42,8 +42,10 @@ export default function App() {
   const [activeQuiz, setActiveQuiz] = useState<Quiz>();
   const [attempt, setAttempt] = useState<Attempt>();
   const [result, setResult] = useState<QuizResult>();
+  const [showAnswers, setShowAnswers] = useState(false);
   const [openPassage, setOpenPassage] = useState<ReadingPassage>();
   const [importErrors, setImportErrors] = useState<string[]>([]);
+  const [inboxError, setInboxError] = useState("");
   const [pastedJson, setPastedJson] = useState("");
   const [notice, setNotice] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -89,8 +91,8 @@ export default function App() {
     const file = validation.data;
     const exists = loadQuizzes().some((quiz) => quiz.id === file.quiz.id);
     if (exists && !replace) throw new Error("A quiz with this id already exists.");
-    if (exists) clearQuizProgress(file.quiz.id);
     saveQuiz(file.quiz);
+    if (exists) clearQuizProgress(file.quiz.id);
     refreshLibrary();
     setNotice(`${file.quiz.title} was ${exists ? "replaced" : "imported"}.`);
     setScreen("library");
@@ -111,6 +113,7 @@ export default function App() {
     if (fresh) clearAttempt(quiz.id);
     const saved = fresh ? undefined : loadAttempt(quiz.id);
     const nextAttempt: Attempt = saved ?? { quizId: quiz.id, answers: {}, currentIndex: 0, updatedAt: new Date().toISOString() };
+    if (!saved) saveAttempt(nextAttempt);
     setActiveQuiz(quiz);
     setAttempt(nextAttempt);
     setScreen("attempt");
@@ -143,6 +146,14 @@ export default function App() {
     saveResult(nextResult);
     clearAttempt(activeQuiz.id);
     setResult(nextResult);
+    setShowAnswers(false);
+    setScreen("results");
+  };
+
+  const reviewResult = (quiz: Quiz, savedResult: QuizResult) => {
+    setActiveQuiz(quiz);
+    setResult(savedResult);
+    setShowAnswers(false);
     setScreen("results");
   };
 
@@ -155,8 +166,15 @@ export default function App() {
     }
     const exists = quizzes.some((quiz) => quiz.id === validation.data.quiz.id);
     if (exists && !window.confirm(`Replace “${validation.data.quiz.title}” and clear its saved progress?`)) return false;
-    importQuizPayload(validation.data, exists);
-    return true;
+    try {
+      importQuizPayload(validation.data, exists);
+      return true;
+    } catch (error) {
+      setImportErrors([error instanceof DOMException && error.name === "QuotaExceededError"
+        ? "file: Device storage is full. No existing quiz or progress was replaced."
+        : error instanceof Error ? error.message : "file: Import failed"]);
+      return false;
+    }
   };
 
   const handleFile = async (file?: File) => {
@@ -177,10 +195,22 @@ export default function App() {
   };
 
   const handleAcceptInbox = async (item: QuizInboxItem) => {
-    const exists = quizzes.some((quiz) => quiz.id === item.quizId);
+    setInboxError("");
+    const validation = validateQuizFile(item.payload);
+    if (!validation.success) {
+      setInboxError(`This submission is invalid: ${validation.errors.join("; ")}`);
+      return;
+    }
+    const exists = loadQuizzes().some((quiz) => quiz.id === item.quizId);
     if (exists && !window.confirm(`Replace “${item.title}” and clear its saved progress?`)) return;
     if (!await inbox.review(item.id, "accepted")) return;
-    importQuizPayload(item.payload, exists);
+    try {
+      importQuizPayload(validation.data, exists);
+    } catch (error) {
+      const restored = await inbox.restorePending(item.id);
+      const reason = error instanceof Error ? error.message : "Device storage may be full.";
+      setInboxError(`The quiz was not saved: ${reason} ${restored ? "The submission is pending again." : "The submission could not be returned to pending; contact the project owner."}`);
+    }
   };
 
   const handleRejectInbox = async (item: QuizInboxItem) => {
@@ -273,6 +303,7 @@ export default function App() {
                     {quiz.learningMaterial && (
                       <button className="study-button" type="button" onClick={() => openLearningMaterial(quiz)} aria-label={`Study ${quiz.title}`}>Study guide</button>
                     )}
+                    {latest && <button className="study-button" type="button" onClick={() => reviewResult(quiz, latest)} aria-label={`Review ${quiz.title}`}>Review results</button>}
                     <button className="arrow-button" type="button" onClick={() => startQuiz(quiz)} aria-label={`${saved ? "Resume" : "Start"} ${quiz.title}`}>
                       <span>{saved ? "Resume" : "Start"}</span><b aria-hidden="true">→</b>
                     </button>
@@ -299,7 +330,7 @@ export default function App() {
         <QuizInbox
           items={inbox.items}
           loading={inbox.loading}
-          message={inbox.message}
+          message={inboxError || inbox.message}
           onAccept={(item) => void handleAcceptInbox(item)}
           onReject={(item) => void handleRejectInbox(item)}
           onDelete={(item) => void handleDeleteInbox(item)}
@@ -367,7 +398,7 @@ export default function App() {
           <label className="file-drop">
             <span className="upload-icon" aria-hidden="true">↑</span>
             <strong>Choose a JSON file</strong>
-            <span>One quiz with optional study guide and reading passages per file · processed locally</span>
+              <span>One quiz with optional study guide and reading materials per file · processed locally</span>
             <input aria-label="Choose a JSON file" type="file" accept="application/json,.json" onChange={(event) => { void handleFile(event.target.files?.[0]); event.currentTarget.value = ""; }} />
           </label>
           <div className="import-divider" aria-hidden="true"><span>or paste JSON</span></div>
@@ -402,7 +433,9 @@ export default function App() {
             <div className="resource-actions">
               <a href={`${import.meta.env.BASE_URL}examples/basic-math.json`} download>Example JSON</a>
               <a href={`${import.meta.env.BASE_URL}examples/reading-practice.json`} download>Reading example</a>
+              <a href={`${import.meta.env.BASE_URL}examples/rich-reading.json`} download>Rich reading example</a>
               <a href={`${import.meta.env.BASE_URL}AI_PROMPT.md`} download>AI prompt</a>
+              <a href={`${import.meta.env.BASE_URL}AI_RICH_PROMPT.md`} download>Rich AI prompt</a>
             </div>
           </div>
         </main>
@@ -477,6 +510,7 @@ export default function App() {
           </section>
           <section className="review-section">
             <div className="section-heading"><h2>Review your answers</h2><span>{result.correct}/{result.total} correct</span></div>
+            <button className="secondary-button answer-toggle" type="button" aria-pressed={showAnswers} onClick={() => setShowAnswers((value) => !value)}>{showAnswers ? "Hide answers" : "Show answers"}</button>
             {activeQuiz.questions.map((question, index) => {
               const answer = result.answers[question.id];
               const correct = isCorrect(question, answer);
@@ -489,8 +523,8 @@ export default function App() {
                     <h3>{question.prompt}</h3>
                     {passage && <button className="passage-button" type="button" onClick={() => setOpenPassage(passage)}>Read passage: {passage.title}</button>}
                     <p><b>Your answer:</b> {userAnswerText(question, answer)}</p>
-                    {!correct && <p><b>Correct answer:</b> {correctAnswerText(question)}</p>}
-                    {question.explanation && <p className="explanation">{question.explanation}</p>}
+                    {showAnswers && <p><b>Correct answer:</b> {correctAnswerText(question)}</p>}
+                    {showAnswers && question.explanation && <p className="explanation">{question.explanation}</p>}
                   </div>
                 </article>
               );
@@ -502,7 +536,7 @@ export default function App() {
           </div>
         </main>
       )}
-      {openPassage && <ReadingPassageDialog passage={openPassage} onClose={() => setOpenPassage(undefined)} />}
+      {openPassage && activeQuiz && <ReadingPassageDialog quizId={activeQuiz.id} passage={openPassage} onClose={() => setOpenPassage(undefined)} />}
     </div>
   );
 }

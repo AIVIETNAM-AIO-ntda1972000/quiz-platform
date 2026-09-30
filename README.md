@@ -23,7 +23,9 @@ The importer validates the complete file before saving it. The exact versioned c
 
 A quiz may include `learningMaterial` with explanatory sections, key points, and structured `flow`, `comparison`, or `distribution` illustrations. The guide is imported and synced with the quiz and remains available offline.
 
-For reading practice, add source text once in `quiz.passages` and give multiple questions the same `passageId`. Learners can open the passage beside each question and while reviewing answers. The reading example demonstrates this with one passage and four questions. This is an original practice example, not an official IELTS exercise.
+For reading practice, add source text once in `quiz.passages` and give multiple questions the same `passageId`. Learners can open the passage beside each question and while reviewing answers; the app remembers the reading position on that device. The plain reading example demonstrates this with one passage and four questions. This is an original practice example, not an official IELTS exercise.
+
+For AI or coding lessons, use the [rich reading example](public/examples/rich-reading.json) and [rich AI prompt](public/AI_RICH_PROMPT.md). Schema version 2 passages render Markdown, code, KaTeX math, Mermaid diagrams, and small offline image assets. Raw HTML and remote images are not supported. After completing a quiz, correct answers and explanations stay hidden until **Show answers** is pressed; saved results can be reviewed again from the library.
 
 Additional ready-to-import quiz files are kept in [`sample-quizzes`](sample-quizzes), including a Vietnamese introduction to AI.
 
@@ -48,6 +50,7 @@ Signed-in users also receive AI-generated quiz drafts in a private review inbox.
 
 1. Create a Supabase project and open its SQL Editor.
 2. Run [`supabase/schema.sql`](supabase/schema.sql). This creates private synchronized data and quiz-inbox rows per user and enables Row Level Security.
+   If the project already exists, run only [`supabase/migrations/20260930_rich_sync.sql`](supabase/migrations/20260930_rich_sync.sql) in the SQL Editor before deploying a version 2-capable web app. It adds a sync-capability check and blocks older clients from overwriting a rich snapshot. An older Android APK must be updated after the account has synchronized rich content.
 3. Copy `.env.example` to `.env.local`, then enter the project URL and publishable key.
 4. For GitHub Pages and APK builds, add repository Actions secrets named `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`.
 5. In Supabase Authentication, enable the Email provider and disable **Confirm email**. The app derives an internal, non-deliverable auth address from each username, so users only enter a username and password.

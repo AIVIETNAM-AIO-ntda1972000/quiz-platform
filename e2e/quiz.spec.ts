@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 
 const decisionTreeQuiz = JSON.parse(readFileSync(new URL("../sample-quizzes/decision-tree-practical-work.json", import.meta.url), "utf8"));
 const readingQuiz = JSON.parse(readFileSync(new URL("../public/examples/reading-practice.json", import.meta.url), "utf8"));
+const richQuiz = JSON.parse(readFileSync(new URL("../public/examples/rich-reading.json", import.meta.url), "utf8"));
 
 const importedQuiz = {
   schemaVersion: 1,
@@ -112,4 +113,73 @@ test("reuses a reading passage across questions, review, and offline reload", as
   await page.getByRole("button", { name: "Start Reading Practice: Urban Wetlands" }).click();
   await page.getByRole("button", { name: "Read passage: The Return of Urban Wetlands" }).click();
   await expect(page.getByRole("dialog")).toContainText("city planners often drained wetlands");
+});
+
+test("renders rich reading offline, restores position, and reveals answers only on request", async ({ page, context }) => {
+  const quizWithImage = structuredClone(richQuiz);
+  quizWithImage.quiz.passages[0].content += "\n\n![Small embedded image](quiz-asset:figure-1)";
+  quizWithImage.quiz.passages[0].assets = [{
+    id: "figure-1",
+    mimeType: "image/png",
+    base64: readFileSync(new URL("../public/pwa-64x64.png", import.meta.url)).toString("base64"),
+  }];
+  await page.goto("/");
+  await page.getByRole("button", { name: "Import quiz" }).click();
+  await page.getByLabel("Choose a JSON file").setInputFiles({
+    name: "rich-reading.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(JSON.stringify(quizWithImage)),
+  });
+  await page.getByRole("button", { name: "Start Reading Practice: A Small Neural Network" }).click();
+  await page.getByRole("button", { name: "Read passage: How a Neural Network Learns" }).click();
+  const dialog = page.getByRole("dialog", { name: "How a Neural Network Learns" });
+  await expect(dialog.getByRole("heading", { name: "A small neural network" })).toBeVisible();
+  await expect(dialog.locator(".katex").first()).toBeVisible();
+  await expect(dialog.locator(".reading-diagram img")).toBeVisible();
+  await expect(dialog.getByRole("img", { name: "Small embedded image" })).toBeVisible();
+  const scrollArea = dialog.locator(".reading-dialog-body");
+  const initialScroll = await scrollArea.evaluate((element) => {
+    element.scrollTop = element.scrollHeight - element.clientHeight;
+    element.dispatchEvent(new Event("scroll"));
+    return element.scrollTop;
+  });
+  expect(initialScroll).toBeGreaterThan(0);
+  await page.getByRole("button", { name: "Close passage" }).click();
+  await page.getByRole("button", { name: "Read passage: How a Neural Network Learns" }).click();
+  await expect.poll(() => scrollArea.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+  await page.getByRole("button", { name: "Close passage" }).click();
+  await page.reload();
+  await page.getByRole("button", { name: "Resume Reading Practice: A Small Neural Network" }).click();
+  await page.getByRole("button", { name: "Read passage: How a Neural Network Learns" }).click();
+  await expect.poll(() => scrollArea.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+  await page.getByRole("button", { name: "Close passage" }).click();
+  await page.getByText("Numbers learned from examples").click();
+  await page.getByRole("button", { name: /Next question/ }).click();
+  await page.getByRole("button", { name: "Read passage: How a Neural Network Learns" }).click();
+  await expect.poll(() => scrollArea.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+  await page.getByRole("button", { name: "Close passage" }).click();
+  await page.getByText("Loss measures prediction error.").click();
+  await page.getByText("Validation data can help assess performance on new examples.").click();
+  await page.getByRole("button", { name: /Next question/ }).click();
+  await page.getByLabel("Your answer").fill("optimizer");
+  await page.getByRole("button", { name: "Finish quiz" }).click();
+  await expect(page.getByText("100%")).toBeVisible();
+  await expect(page.getByText("Correct answer:")).toHaveCount(0);
+  await expect(page.getByText("The passage says weights are learned from examples rather than written by hand.")).toHaveCount(0);
+  await page.getByRole("button", { name: "Show answers" }).click();
+  await expect(page.getByText("Correct answer:")).toHaveCount(3);
+  await page.getByRole("button", { name: "Hide answers" }).click();
+  await expect(page.getByText("Correct answer:")).toHaveCount(0);
+  await page.getByRole("button", { name: "Back to library" }).click();
+  await page.reload();
+  await page.getByRole("button", { name: "Review Reading Practice: A Small Neural Network" }).click();
+  await expect(page.getByRole("button", { name: "Show answers" })).toBeVisible();
+  await page.evaluate(() => navigator.serviceWorker.ready);
+  await context.setOffline(true);
+  await page.goto("/");
+  await page.getByRole("button", { name: "Review Reading Practice: A Small Neural Network" }).click();
+  await page.getByRole("button", { name: "Read passage: How a Neural Network Learns" }).first().click();
+  await expect(page.getByRole("dialog").getByRole("heading", { name: "A small neural network" })).toBeVisible();
+  await expect(page.getByRole("dialog").locator(".reading-diagram img")).toBeVisible();
+  await expect(page.getByRole("dialog").getByRole("img", { name: "Small embedded image" })).toBeVisible();
 });

@@ -44,7 +44,7 @@ function createRepository(userClient: SupabaseClient, adminClient: SupabaseClien
         : undefined;
       if (!Array.isArray(quizzes)) return [];
       return quizzes.flatMap((quiz) => {
-        const validation = validateMcpQuiz({ schemaVersion: 1, quiz });
+        const validation = validateMcpQuiz({ schemaVersion: (data?.data as { schemaVersion?: unknown }).schemaVersion, quiz });
         return validation.success ? [validation.data.quiz] : [];
       });
     },
@@ -139,12 +139,12 @@ const protectedHandler = pipeline(
 
       server.registerTool("get_quiz_instructions", {
         title: "Get quiz creation instructions",
-        description: "Return the current schemaVersion 1 quiz contract and safe publishing workflow.",
+        description: "Return the current version 1 and 2 quiz contracts and safe publishing workflow.",
         inputSchema: z.object({}),
         annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
         securitySchemes,
       }, async () => textResult({
-        schemaVersion: 1,
+        supportedSchemaVersions: [1, 2],
         contract: QUIZ_CONTRACT,
         instructions: QUIZ_CREATION_INSTRUCTIONS,
         supportedQuestionTypes: ["singleChoice", "multipleChoice", "shortText"],

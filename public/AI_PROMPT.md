@@ -2,6 +2,8 @@
 
 Use this universal fallback with any chatbot, including chat interfaces that cannot connect to arbitrary MCP servers. After the chatbot responds, paste the JSON into Quiz Platform's import screen. Do not ask the chatbot to upload or publish anything when using this prompt.
 
+This prompt creates the original plain-text `schemaVersion: 1` format. For Markdown documents with tables, code, math, and Mermaid diagrams, use [`AI_RICH_PROMPT.md`](AI_RICH_PROMPT.md) and `schemaVersion: 2` instead.
+
 Create a quiz about **[TOPIC]** for a learner at **[LEVEL]**.
 
 Return one valid JSON object only. Do not use Markdown fences, comments, explanations outside the JSON, external URLs, HTML, image data, or properties that are not shown in schema version 1.
