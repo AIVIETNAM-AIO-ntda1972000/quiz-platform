@@ -59,6 +59,13 @@ describe("quiz validation", () => {
     expect(validateQuizFile({ ...richExample, schemaVersion: 1 }).success).toBe(false);
   });
 
+  it("limits the original version 2 JSON file even when excess bytes are whitespace", () => {
+    const oversized = `${JSON.stringify(richExample)}${" ".repeat(1_048_576)}`;
+    const result = parseQuizJson(oversized);
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.errors).toContain("file: Version 2 quiz exceeds the 1 MiB JSON limit");
+  });
+
   it.each([
     ["remote image", "![Chart](https://example.com/chart.png)"],
     ["raw HTML", "<script>alert(1)</script>"],

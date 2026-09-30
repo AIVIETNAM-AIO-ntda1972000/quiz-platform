@@ -248,7 +248,12 @@ export function validateQuizFile(input: unknown): ValidationResult {
 
 export function parseQuizJson(text: string): ValidationResult {
   try {
-    return validateQuizFile(JSON.parse(text));
+    const parsed: unknown = JSON.parse(text);
+    if (parsed && typeof parsed === "object" && "schemaVersion" in parsed && parsed.schemaVersion === 2
+      && new TextEncoder().encode(text).byteLength > MAX_RICH_QUIZ_BYTES) {
+      return { success: false, errors: ["file: Version 2 quiz exceeds the 1 MiB JSON limit"] };
+    }
+    return validateQuizFile(parsed);
   } catch {
     return { success: false, errors: ["file: This is not valid JSON"] };
   }
