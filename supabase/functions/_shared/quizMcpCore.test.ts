@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { QuizFile } from "../../../src/models";
+import readingExample from "../../../public/examples/reading-practice.json";
 import {
   MAX_PENDING_QUIZZES,
   MAX_QUIZ_PAYLOAD_BYTES,
@@ -42,6 +43,11 @@ describe("quiz MCP core", () => {
     expect(validateMcpQuiz(validQuiz)).toEqual({ success: true, data: validQuiz });
     const invalid = validateMcpQuiz({ schemaVersion: 1, quiz: { id: "x" } });
     expect(invalid.success).toBe(false);
+  });
+
+  it("accepts a shared reading passage through the remote MCP validator", () => {
+    const result = validateMcpQuiz(readingExample);
+    expect(result.success).toBe(true);
   });
 
   it("rejects payloads over the request limit", () => {

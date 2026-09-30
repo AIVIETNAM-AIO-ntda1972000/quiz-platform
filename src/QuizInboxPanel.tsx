@@ -40,7 +40,13 @@ export function QuizInbox({ items, loading, message, onAccept, onReject, onDelet
               <details>
                 <summary>Preview contents</summary>
                 {quiz.learningMaterial && <p><strong>Study guide:</strong> {quiz.learningMaterial.sections.length} sections</p>}
-                <ol>{quiz.questions.map((question) => <li key={question.id}>{question.prompt}</li>)}</ol>
+                {quiz.passages?.map((passage) => (
+                  <section className="inbox-passage" key={passage.id}>
+                    <h3>{passage.title}</h3>
+                    {passage.paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}
+                  </section>
+                ))}
+                <ol>{quiz.questions.map((question) => <li key={question.id}>{question.prompt}{question.passageId && <span> (passage: {question.passageId})</span>}</li>)}</ol>
               </details>
               <div className="inbox-actions">
                 <button className="primary-button" type="button" onClick={() => onAccept(item)}>Accept quiz</button>

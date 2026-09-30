@@ -9,6 +9,8 @@ Return one valid JSON object only. Do not use Markdown fences, comments, explana
 Requirements:
 
 - Put the optional `learningMaterial` object inside `quiz`. It is recommended for teaching-oriented quizzes and is imported, stored offline, deleted, and cloud-synchronized together with the quiz.
+- For reading-comprehension practice, put each source text once in optional `quiz.passages`, then set `passageId` on every question that uses it. Use the same passage ID for multiple questions. Omit both fields when the questions do not need a shared text. A passage is the text to read and answer from; `learningMaterial` is a separate study guide.
+- Give every passage a unique ID, a title, and one to thirty non-empty paragraphs. A quiz may contain one to twenty passages. Every `passageId` must match a passage in that quiz. Do not put the full passage in each question prompt.
 - Create three to six focused study-guide sections covering concepts, reasons, practical steps, and common pitfalls. Each section needs a unique ID, one to eight paragraphs, and may contain one to ten key points and one structured illustration.
 - Use `flow` for two to eight ordered steps, `comparison` for two to six alternatives, and `distribution` for two to six groups of labeled counts. Each distribution group needs one to six segments, and every `count` must be a positive integer.
 - Include an appropriate mix of `singleChoice`, `multipleChoice`, and `shortText` questions. Question IDs must be unique. Option IDs must be unique within each question.
@@ -24,6 +26,13 @@ Use this complete example as the structural template:
     "id": "topic-level",
     "title": "Quiz title",
     "description": "One-sentence description",
+    "passages": [
+      {
+        "id": "source-text",
+        "title": "Reading passage title",
+        "paragraphs": ["First paragraph of the source text.", "Second paragraph of the source text."]
+      }
+    ],
     "learningMaterial": {
       "title": "Study guide title",
       "summary": "What the learner will understand",
@@ -88,6 +97,7 @@ Use this complete example as the structural template:
       {
         "id": "q1",
         "type": "singleChoice",
+        "passageId": "source-text",
         "prompt": "Choose one answer.",
         "options": [{ "id": "a", "text": "Answer A" }, { "id": "b", "text": "Answer B" }],
         "correctOptionId": "a",
@@ -96,6 +106,7 @@ Use this complete example as the structural template:
       {
         "id": "q2",
         "type": "multipleChoice",
+        "passageId": "source-text",
         "prompt": "Choose every correct answer.",
         "options": [{ "id": "a", "text": "Answer A" }, { "id": "b", "text": "Answer B" }, { "id": "c", "text": "Answer C" }],
         "correctOptionIds": ["a", "c"],

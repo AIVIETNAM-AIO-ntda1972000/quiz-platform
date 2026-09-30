@@ -3,7 +3,7 @@ import type { QuizFile } from "../src/models.ts";
 
 const nonEmptyText = z.string().trim().min(1, "Required");
 const optionSchema = z.object({ id: nonEmptyText, text: nonEmptyText }).strict();
-const baseQuestion = { id: nonEmptyText, prompt: nonEmptyText, explanation: nonEmptyText.optional() };
+const baseQuestion = { id: nonEmptyText, prompt: nonEmptyText, explanation: nonEmptyText.optional(), passageId: nonEmptyText.optional() };
 
 const singleChoiceSchema = z.object({
   ...baseQuestion,
@@ -71,6 +71,12 @@ const learningMaterialSchema = z.object({
   }).strict()).min(1, "Add at least one learning section").max(30, "Use at most thirty learning sections"),
 }).strict();
 
+const readingPassageSchema = z.object({
+  id: nonEmptyText,
+  title: nonEmptyText,
+  paragraphs: z.array(nonEmptyText).min(1, "Add at least one passage paragraph").max(30, "Use at most thirty passage paragraphs"),
+}).strict();
+
 export const quizFileSchema = z.object({
   schemaVersion: z.literal(1, { error: "Only schemaVersion 1 is supported" }),
   quiz: z.object({
@@ -78,9 +84,18 @@ export const quizFileSchema = z.object({
     title: nonEmptyText,
     description: nonEmptyText.optional(),
     learningMaterial: learningMaterialSchema.optional(),
+    passages: z.array(readingPassageSchema).min(1, "Add at least one passage").max(20, "Use at most twenty passages").optional(),
     questions: z.array(z.discriminatedUnion("type", [singleChoiceSchema, multipleChoiceSchema, shortTextSchema])).min(1, "Add at least one question"),
   }).strict(),
 }).strict().superRefine((data, context) => {
+  const passageIds = new Set<string>();
+  data.quiz.passages?.forEach((passage, passageIndex) => {
+    if (passageIds.has(passage.id)) {
+      context.addIssue({ code: "custom", path: ["quiz", "passages", passageIndex, "id"], message: `Duplicate passage id: ${passage.id}` });
+    }
+    passageIds.add(passage.id);
+  });
+
   const sectionIds = new Set<string>();
   data.quiz.learningMaterial?.sections.forEach((section, sectionIndex) => {
     if (sectionIds.has(section.id)) {
@@ -95,6 +110,10 @@ export const quizFileSchema = z.object({
       context.addIssue({ code: "custom", path: ["quiz", "questions", questionIndex, "id"], message: `Duplicate question id: ${question.id}` });
     }
     questionIds.add(question.id);
+
+    if (question.passageId && !passageIds.has(question.passageId)) {
+      context.addIssue({ code: "custom", path: ["quiz", "questions", questionIndex, "passageId"], message: `Passage id does not exist: ${question.passageId}` });
+    }
 
     if (question.type === "shortText") {
       const answers = new Set<string>();

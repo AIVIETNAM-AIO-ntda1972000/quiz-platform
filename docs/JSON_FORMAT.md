@@ -1,6 +1,6 @@
 # Quiz JSON format
 
-Each file contains exactly one quiz and uses `schemaVersion: 1`. See [`public/examples/basic-math.json`](../public/examples/basic-math.json) for a complete example.
+Each file contains exactly one quiz and uses `schemaVersion: 1`. See [`public/examples/basic-math.json`](../public/examples/basic-math.json) for a general example and [`public/examples/reading-practice.json`](../public/examples/reading-practice.json) for a passage shared by multiple questions.
 
 The same contract and validator apply to every creation path:
 
@@ -19,6 +19,7 @@ No path has a more permissive schema. Remote MCP publishing never writes directl
 - `quiz.title` and each question `prompt` are required.
 - `quiz.description` and each question `explanation` are optional.
 - `quiz.learningMaterial` is optional and belongs inside the `quiz` object. When present, the quiz card includes a **Study guide** button.
+- `quiz.passages` is optional and belongs inside `quiz`. A question can refer to one passage with its optional `passageId`.
 - Unknown fields are rejected so that AI-generated mistakes are visible during import.
 
 ## Optional learning material
@@ -86,6 +87,46 @@ The downloadable Basic Mathematics example demonstrates all three illustration s
 ```
 
 These are separate shape examples. A real section uses one illustration object, not the wrapper object shown above.
+
+## Shared reading passages
+
+Use `passages` when several questions refer to the same source text, such as an IELTS-style reading exercise. Define the text once inside `quiz`, then link any question type to it by ID. The learner can open the passage beside each linked question and again during answer review. The passage remains available after import, offline, and through normal quiz synchronization. It is not the same as `learningMaterial`: passages are source texts to answer from; learning material is a separate teaching guide.
+
+```json
+{
+  "schemaVersion": 1,
+  "quiz": {
+    "id": "reading-example",
+    "title": "Reading example",
+    "passages": [
+      {
+        "id": "article-1",
+        "title": "A short article",
+        "paragraphs": ["The town opened a new library in May.", "Visitors can borrow books and use computers."]
+      }
+    ],
+    "questions": [
+      {
+        "id": "q1",
+        "type": "singleChoice",
+        "passageId": "article-1",
+        "prompt": "When did the library open?",
+        "options": [{ "id": "a", "text": "May" }, { "id": "b", "text": "June" }],
+        "correctOptionId": "a"
+      },
+      {
+        "id": "q2",
+        "type": "shortText",
+        "passageId": "article-1",
+        "prompt": "Name one thing visitors can borrow.",
+        "acceptedAnswers": ["books", "a book"]
+      }
+    ]
+  }
+}
+```
+
+Each passage requires a unique non-empty `id`, a non-empty `title`, and one to thirty non-empty `paragraphs`. A quiz can have one to twenty passages. If a question has `passageId`, that ID must exist in `quiz.passages`; otherwise import fails with a field-level error. Unlinked questions and quizzes without passages remain valid. Paragraphs are displayed as plain text, so HTML and external images are not supported.
 
 ## Question types
 

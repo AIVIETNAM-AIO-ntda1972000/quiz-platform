@@ -11,6 +11,7 @@ export const QUIZ_CREATION_INSTRUCTIONS = [
   "Use unique quiz, question, option, and learning-section IDs.",
   "Choice answers must reference existing option IDs.",
   "learningMaterial is optional but recommended for teaching-oriented quizzes.",
+  "For reading practice, define quiz.passages once and link any number of questions with passageId; never repeat the passage in each question.",
   "Call validate_quiz before publish_quiz. Publishing creates a pending draft that the user must accept in the AI Inbox.",
 ].join(" ");
 
@@ -18,18 +19,25 @@ export const QUIZ_CONTRACT = {
   root: { schemaVersion: 1, quiz: "Quiz" },
   Quiz: {
     required: ["id", "title", "questions"],
-    optional: ["description", "learningMaterial"],
+    optional: ["description", "learningMaterial", "passages"],
+  },
+  passages: {
+    required: ["id", "title", "paragraphs"],
+    rules: ["1 to 20 passages", "unique passage IDs", "1 to 30 non-empty paragraphs per passage"],
   },
   singleChoice: {
     required: ["id", "type", "prompt", "options", "correctOptionId"],
+    optional: ["passageId", "explanation"],
     rules: ["type must be singleChoice", "at least two options", "correctOptionId must reference an option"],
   },
   multipleChoice: {
     required: ["id", "type", "prompt", "options", "correctOptionIds"],
+    optional: ["passageId", "explanation"],
     rules: ["type must be multipleChoice", "at least two options", "every correctOptionId must reference an option"],
   },
   shortText: {
     required: ["id", "type", "prompt", "acceptedAnswers"],
+    optional: ["passageId", "explanation"],
     rules: ["type must be shortText", "at least one non-empty accepted answer"],
   },
   learningMaterial: {
