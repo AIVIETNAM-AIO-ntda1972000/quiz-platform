@@ -45,7 +45,7 @@ test("imports, completes, reloads, and starts offline", async ({ page, context }
   await page.getByRole("button", { name: "Import quiz" }).click();
   await page.getByLabel("Choose a JSON file").setInputFiles({ name: "offline.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(importedQuiz)) });
   await expect(page.getByRole("heading", { name: "Offline Check" })).toBeVisible();
-  await page.getByRole("button", { name: "Study Offline Check" }).click();
+  await page.getByRole("button", { name: "Learning material for Offline Check" }).click();
   await expect(page.getByRole("heading", { name: "Offline Study Guide" })).toBeVisible();
   await page.getByRole("button", { name: "Back to library" }).click();
   await page.getByRole("button", { name: "Start Offline Check" }).click();
@@ -59,7 +59,7 @@ test("imports, completes, reloads, and starts offline", async ({ page, context }
   await context.setOffline(true);
   await page.goto("/");
   await expect(page.getByText("What will you learn today?")).toBeVisible();
-  await page.getByRole("button", { name: "Study Offline Check" }).click();
+  await page.getByRole("button", { name: "Learning material for Offline Check" }).click();
   await expect(page.getByRole("heading", { name: "Offline Study Guide" })).toBeVisible();
 });
 
@@ -71,7 +71,7 @@ test("imports and renders the illustrated decision-tree guide", async ({ page })
     mimeType: "application/json",
     buffer: Buffer.from(JSON.stringify(decisionTreeQuiz))
   });
-  await page.getByRole("button", { name: "Study Decision Trees for Practical Work" }).click();
+  await page.getByRole("button", { name: "Learning material for Decision Trees for Practical Work" }).click();
   await expect(page.getByRole("heading", { name: "Decision Trees: From Node Impurity to Reliable Models" })).toBeVisible();
   await expect(page.getByRole("img")).toHaveCount(6);
   await expect(page.getByRole("heading", { name: "Impurity measures class mixture inside a node" })).toBeVisible();
@@ -130,6 +130,17 @@ test("renders rich reading offline, restores position, and reveals answers only 
     mimeType: "application/json",
     buffer: Buffer.from(JSON.stringify(quizWithImage)),
   });
+  await page.getByRole("button", { name: "Learning material for Reading Practice: A Small Neural Network" }).click();
+  await expect(page.getByRole("dialog", { name: "How a Neural Network Learns" })).toContainText("LEARNING MATERIAL");
+  await expect(page.getByRole("dialog").locator(".reading-diagram img")).toBeVisible();
+  await expect(page.getByRole("dialog").getByRole("img", { name: "Small embedded image" })).toBeVisible();
+  const materialScroll = await page.getByRole("dialog").locator(".reading-dialog-body").evaluate((element) => {
+    element.scrollTop = element.scrollHeight - element.clientHeight;
+    element.dispatchEvent(new Event("scroll"));
+    return element.scrollTop;
+  });
+  expect(materialScroll).toBeGreaterThan(0);
+  await page.getByRole("button", { name: "Close material" }).click();
   await page.getByRole("button", { name: "Start Reading Practice: A Small Neural Network" }).click();
   await page.getByRole("button", { name: "Read passage: How a Neural Network Learns" }).click();
   const dialog = page.getByRole("dialog", { name: "How a Neural Network Learns" });
@@ -138,6 +149,7 @@ test("renders rich reading offline, restores position, and reveals answers only 
   await expect(dialog.locator(".reading-diagram img")).toBeVisible();
   await expect(dialog.getByRole("img", { name: "Small embedded image" })).toBeVisible();
   const scrollArea = dialog.locator(".reading-dialog-body");
+  await expect.poll(() => scrollArea.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
   const initialScroll = await scrollArea.evaluate((element) => {
     element.scrollTop = element.scrollHeight - element.clientHeight;
     element.dispatchEvent(new Event("scroll"));
@@ -177,6 +189,9 @@ test("renders rich reading offline, restores position, and reveals answers only 
   await page.evaluate(() => navigator.serviceWorker.ready);
   await context.setOffline(true);
   await page.goto("/");
+  await page.getByRole("button", { name: "Learning material for Reading Practice: A Small Neural Network" }).click();
+  await expect(page.getByRole("dialog", { name: "How a Neural Network Learns" }).locator(".katex").first()).toBeVisible();
+  await page.getByRole("button", { name: "Close material" }).click();
   await page.getByRole("button", { name: "Review Reading Practice: A Small Neural Network" }).click();
   await page.getByRole("button", { name: "Read passage: How a Neural Network Learns" }).first().click();
   await expect(page.getByRole("dialog").getByRole("heading", { name: "A small neural network" })).toBeVisible();

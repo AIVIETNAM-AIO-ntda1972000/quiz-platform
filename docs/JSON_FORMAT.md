@@ -18,18 +18,18 @@ No path has a more permissive schema. Remote MCP publishing never writes directl
 - `quiz.id`, every `question.id`, and every option `id` must be non-empty and unique within their collection.
 - `quiz.title` and each question `prompt` are required.
 - `quiz.description` and each question `explanation` are optional.
-- `quiz.learningMaterial` is optional and belongs inside the `quiz` object. When present, the quiz card includes a **Study guide** button.
+- `quiz.learningMaterial` is optional and belongs inside the `quiz` object. When present, the quiz card includes a **Learning material** button.
 - `quiz.passages` is optional and belongs inside `quiz`. A question can refer to one passage with its optional `passageId`.
 - Unknown fields are rejected so that AI-generated mistakes are visible during import.
 
 ## Optional learning material
 
-Learning material is stored inside the same JSON file as its quiz, so importing, offline storage, deletion, and cloud synchronization also handle its guide. The reusable AI prompt recommends three to six sections, while the schema accepts one to thirty sections.
+Learning material is stored inside the same JSON file as its quiz, so importing, offline storage, deletion, and cloud synchronization also handle its guide. The original structured format works in both schema versions. The reusable version 1 AI prompt recommends three to six sections, while the schema accepts one to thirty sections.
 
 ```json
 {
   "learningMaterial": {
-    "title": "Study guide title",
+    "title": "Learning material title",
     "summary": "Optional overview",
     "sections": [
       {
@@ -88,9 +88,32 @@ The downloadable Basic Mathematics example demonstrates all three illustration s
 
 These are separate shape examples. A real section uses one illustration object, not the wrapper object shown above.
 
+### Reuse a passage as learning material (schema version 2)
+
+For a richer document, put a Markdown passage in `quiz.passages` and point `quiz.learningMaterial` to its ID. The library's **Learning material** button opens the same scrollable reader used by questions, with headings, tables, code, KaTeX, Mermaid, and embedded images. The reading position is saved on the current device. One passage can serve as both the quiz-level document and a source for several questions; it is stored only once.
+
+```json
+{
+  "schemaVersion": 2,
+  "quiz": {
+    "id": "example-lesson",
+    "title": "Example lesson",
+    "learningMaterial": { "passageId": "lesson" },
+    "passages": [
+      { "id": "lesson", "title": "The lesson", "format": "markdown", "content": "# Overview\n\nRead this before answering." }
+    ],
+    "questions": [
+      { "id": "q1", "type": "shortText", "passageId": "lesson", "prompt": "What should you read first?", "acceptedAnswers": ["the lesson", "lesson"] }
+    ]
+  }
+}
+```
+
+The referenced `passageId` must exist in the same quiz. It can point to a plain or Markdown passage, but this reference form itself requires `schemaVersion: 2`. Existing structured learning material remains valid; do not include both forms for one quiz. See [`public/examples/rich-reading.json`](../public/examples/rich-reading.json) for a complete reusable document.
+
 ## Shared reading passages
 
-Use `passages` when several questions refer to the same source text, such as an IELTS-style reading exercise. Define the text once inside `quiz`, then link any question type to it by ID. The learner can open the passage beside each linked question and again during answer review. The passage remains available after import, offline, and through normal quiz synchronization. It is not the same as `learningMaterial`: passages are source texts to answer from; learning material is a separate teaching guide.
+Use `passages` when several questions refer to the same source text, such as an IELTS-style reading exercise. Define the text once inside `quiz`, then link any question type to it by ID. The learner can open the passage beside each linked question and again during answer review. The passage remains available after import, offline, and through normal quiz synchronization. In version 2, `learningMaterial` may optionally point to the same passage so it can also be opened directly from the library.
 
 ```json
 {

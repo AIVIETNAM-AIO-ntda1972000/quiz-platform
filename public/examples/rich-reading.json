@@ -4,6 +4,7 @@
     "id": "neural-network-reading",
     "title": "Reading Practice: A Small Neural Network",
     "description": "Read an illustrated Markdown lesson, then answer three questions.",
+    "learningMaterial": { "passageId": "network-guide" },
     "passages": [
       {
         "id": "network-guide",

@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react";
 import type { QuizInboxItem } from "./quizInbox";
+import { isLearningMaterialReference } from "./models";
 
 const MarkdownPassage = lazy(() => import("./MarkdownPassage").then((module) => ({ default: module.MarkdownPassage })));
 
@@ -25,6 +26,7 @@ export function QuizInbox({ items, loading, message, onAccept, onReject, onDelet
       <section className="inbox-list" aria-label="Pending AI quizzes">
         {items.map((item) => {
           const quiz = item.payload.quiz;
+          const material = quiz.learningMaterial;
           return (
             <article className="inbox-card" key={item.id}>
               <div className="inbox-heading">
@@ -42,7 +44,9 @@ export function QuizInbox({ items, loading, message, onAccept, onReject, onDelet
               </div>
               <details>
                 <summary>Preview contents</summary>
-                {quiz.learningMaterial && <p><strong>Study guide:</strong> {quiz.learningMaterial.sections.length} sections</p>}
+                {material && <p><strong>Learning material:</strong> {isLearningMaterialReference(material)
+                  ? quiz.passages?.find((passage) => passage.id === material.passageId)?.title ?? "Linked passage"
+                  : `${material.sections.length} sections`}</p>}
                 {quiz.passages?.map((passage) => (
                   <section className="inbox-passage" key={passage.id}>
                     <h3>{passage.title}</h3>

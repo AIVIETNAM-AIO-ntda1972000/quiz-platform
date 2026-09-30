@@ -56,6 +56,13 @@ export type LearningMaterial = {
   sections: LearningSection[];
 };
 
+export type LearningMaterialReference = { passageId: string };
+export type QuizLearningMaterial = LearningMaterial | LearningMaterialReference;
+
+export function isLearningMaterialReference(material: QuizLearningMaterial): material is LearningMaterialReference {
+  return "passageId" in material;
+}
+
 export type PlainReadingPassage = {
   id: string;
   title: string;
@@ -76,7 +83,7 @@ export type Quiz = {
   id: string;
   title: string;
   description?: string;
-  learningMaterial?: LearningMaterial;
+  learningMaterial?: QuizLearningMaterial;
   passages?: ReadingPassage[];
   questions: Question[];
 };

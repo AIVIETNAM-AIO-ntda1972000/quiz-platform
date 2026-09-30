@@ -59,6 +59,28 @@ describe("quiz validation", () => {
     expect(validateQuizFile({ ...richExample, schemaVersion: 1 }).success).toBe(false);
   });
 
+  it("requires a linked learning material passage to exist and rejects that form in version 1", () => {
+    const invalid = structuredClone(richExample);
+    invalid.quiz.learningMaterial.passageId = "missing";
+    const result = validateQuizFile(invalid);
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.errors).toContain("quiz.learningMaterial.passageId: Passage id does not exist: missing");
+    expect(validateQuizFile({ ...richExample, schemaVersion: 1 }).success).toBe(false);
+  });
+
+  it("allows a quiz-level document that is not linked to a question", () => {
+    expect(validateQuizFile({
+      schemaVersion: 2,
+      quiz: {
+        id: "standalone-lesson",
+        title: "Standalone lesson",
+        learningMaterial: { passageId: "lesson" },
+        passages: [{ id: "lesson", title: "Lesson", format: "markdown", content: "# Overview\n\nA short lesson." }],
+        questions: [{ id: "q1", type: "shortText", prompt: "Say yes.", acceptedAnswers: ["yes"] }],
+      },
+    }).success).toBe(true);
+  });
+
   it("limits the original version 2 JSON file even when excess bytes are whitespace", () => {
     const oversized = `${JSON.stringify(richExample)}${" ".repeat(1_048_576)}`;
     const result = parseQuizJson(oversized);

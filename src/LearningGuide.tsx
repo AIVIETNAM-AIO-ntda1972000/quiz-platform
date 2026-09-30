@@ -78,10 +78,10 @@ export function LearningGuide({ material, quizTitle, onBack }: LearningGuideProp
     <main className="guide-page">
       <button className="back-link" type="button" onClick={onBack}>← Back to library</button>
       <section className="guide-hero">
-        <p className="eyebrow">STUDY GUIDE · {quizTitle.toUpperCase()}</p>
+        <p className="eyebrow">LEARNING MATERIAL · {quizTitle.toUpperCase()}</p>
         <h1 tabIndex={-1}>{material.title}</h1>
         {material.summary && <p>{material.summary}</p>}
-        <nav className="guide-toc" aria-label="Study guide sections">
+        <nav className="guide-toc" aria-label="Learning material sections">
           {material.sections.map((section, index) => <a href={`#material-${section.id}`} key={section.id}>{index + 1}. {section.title}</a>)}
         </nav>
       </section>
