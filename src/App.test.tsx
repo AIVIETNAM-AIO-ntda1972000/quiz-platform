@@ -2,6 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
+import readingExample from "../public/examples/reading-practice.json";
 
 describe("Quiz Platform", () => {
   beforeEach(() => {
@@ -107,6 +108,48 @@ describe("Quiz Platform", () => {
     expect(screen.getAllByLabelText("Correct")).toHaveLength(3);
     await user.click(screen.getByRole("button", { name: "Try again" }));
     expect(screen.getByText("Question 1 of 3")).toBeInTheDocument();
+  });
+
+  it("opens the same reading passage across questions and during review", async () => {
+    Object.defineProperty(HTMLDialogElement.prototype, "showModal", {
+      configurable: true,
+      value(this: HTMLDialogElement) { this.setAttribute("open", ""); }
+    });
+    Object.defineProperty(HTMLDialogElement.prototype, "close", {
+      configurable: true,
+      value(this: HTMLDialogElement) {
+        this.removeAttribute("open");
+        this.dispatchEvent(new Event("close"));
+      }
+    });
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: "Import quiz" }));
+    await user.click(screen.getByLabelText("Paste a chatbot response"));
+    await user.paste(JSON.stringify(readingExample));
+    await user.click(screen.getByRole("button", { name: "Validate and import" }));
+    await user.click(screen.getByRole("button", { name: "Start Reading Practice: Urban Wetlands" }));
+
+    await user.click(screen.getByRole("button", { name: "Read passage: The Return of Urban Wetlands" }));
+    expect(screen.getByRole("dialog", { name: "The Return of Urban Wetlands" })).toHaveTextContent("city planners often drained wetlands");
+    await user.click(screen.getByRole("button", { name: "Close passage" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    await user.click(screen.getByText("To explain why some cities restore wetlands and what those wetlands can and cannot do"));
+    await user.click(screen.getByRole("button", { name: /Next question/ }));
+    await user.click(screen.getByRole("button", { name: "Read passage: The Return of Urban Wetlands" }));
+    expect(screen.getByRole("dialog")).toHaveTextContent("city planners often drained wetlands");
+    await user.click(screen.getByRole("button", { name: "Close passage" }));
+    await user.click(screen.getByText("They hold rainwater temporarily."));
+    await user.click(screen.getByText("They provide habitat for birds and insects."));
+    await user.click(screen.getByRole("button", { name: /Next question/ }));
+    await user.type(screen.getByLabelText("Your answer"), "native species");
+    await user.click(screen.getByRole("button", { name: /Next question/ }));
+    await user.click(screen.getByText("To show that wetlands work best as one part of a wider flood strategy"));
+    await user.click(screen.getByRole("button", { name: "Finish quiz" }));
+    expect(screen.getByText("100%")).toBeInTheDocument();
+    await user.click(screen.getAllByRole("button", { name: "Read passage: The Return of Urban Wetlands" })[0]);
+    expect(screen.getByRole("dialog")).toHaveTextContent("city planners often drained wetlands");
   });
 
   it("restores an interrupted attempt", async () => {

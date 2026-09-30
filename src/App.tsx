@@ -4,10 +4,11 @@ import { exampleQuizFile } from "./exampleQuiz";
 import { gradeQuiz, isCorrect } from "./grading";
 import { LearningGuide } from "./LearningGuide";
 import { QuizInbox } from "./QuizInboxPanel";
-import type { Answer, Attempt, Question, Quiz, QuizResult } from "./models";
+import type { Answer, Attempt, Question, Quiz, QuizResult, ReadingPassage } from "./models";
 import { useOAuthGrants } from "./oauthGrants";
 import { useQuizInbox, type QuizInboxItem } from "./quizInbox";
 import { parseQuizJson, validateQuizFile } from "./quizSchema";
+import { ReadingPassageDialog } from "./ReadingPassageDialog";
 import { clearAttempt, clearQuizProgress, deleteQuiz, initializeQuizLibrary, loadAttempt, loadQuizzes, loadResult, saveAttempt, saveQuiz, saveResult } from "./storage";
 import { applyTheme, getSavedTheme, getThemeMediaQuery, resolveTheme, saveThemePreference, type Theme } from "./theme";
 import { useWebMcp } from "./webMcp";
@@ -41,6 +42,7 @@ export default function App() {
   const [activeQuiz, setActiveQuiz] = useState<Quiz>();
   const [attempt, setAttempt] = useState<Attempt>();
   const [result, setResult] = useState<QuizResult>();
+  const [openPassage, setOpenPassage] = useState<ReadingPassage>();
   const [importErrors, setImportErrors] = useState<string[]>([]);
   const [pastedJson, setPastedJson] = useState("");
   const [notice, setNotice] = useState("");
@@ -98,12 +100,14 @@ export default function App() {
   useWebMcp(quizzes, importQuizPayload);
 
   const goHome = () => {
+    setOpenPassage(undefined);
     setImportErrors([]);
     setNotice("");
     setScreen("library");
   };
 
   const startQuiz = (quiz: Quiz, fresh = false) => {
+    setOpenPassage(undefined);
     if (fresh) clearAttempt(quiz.id);
     const saved = fresh ? undefined : loadAttempt(quiz.id);
     const nextAttempt: Attempt = saved ?? { quizId: quiz.id, answers: {}, currentIndex: 0, updatedAt: new Date().toISOString() };
@@ -126,6 +130,7 @@ export default function App() {
 
   const moveTo = (index: number) => {
     if (!attempt || !activeQuiz) return;
+    setOpenPassage(undefined);
     const next = { ...attempt, currentIndex: Math.max(0, Math.min(index, activeQuiz.questions.length - 1)), updatedAt: new Date().toISOString() };
     setAttempt(next);
     saveAttempt(next);
@@ -133,6 +138,7 @@ export default function App() {
 
   const finishQuiz = () => {
     if (!attempt || !activeQuiz) return;
+    setOpenPassage(undefined);
     const nextResult = gradeQuiz(activeQuiz, attempt.answers);
     saveResult(nextResult);
     clearAttempt(activeQuiz.id);
@@ -361,7 +367,7 @@ export default function App() {
           <label className="file-drop">
             <span className="upload-icon" aria-hidden="true">↑</span>
             <strong>Choose a JSON file</strong>
-            <span>One quiz and optional study guide per file · processed locally</span>
+            <span>One quiz with optional study guide and reading passages per file · processed locally</span>
             <input aria-label="Choose a JSON file" type="file" accept="application/json,.json" onChange={(event) => { void handleFile(event.target.files?.[0]); event.currentTarget.value = ""; }} />
           </label>
           <div className="import-divider" aria-hidden="true"><span>or paste JSON</span></div>
@@ -395,6 +401,7 @@ export default function App() {
             <div><strong>Need a starting point?</strong><span>Download the example or use the AI prompt.</span></div>
             <div className="resource-actions">
               <a href={`${import.meta.env.BASE_URL}examples/basic-math.json`} download>Example JSON</a>
+              <a href={`${import.meta.env.BASE_URL}examples/reading-practice.json`} download>Reading example</a>
               <a href={`${import.meta.env.BASE_URL}AI_PROMPT.md`} download>AI prompt</a>
             </div>
           </div>
@@ -403,6 +410,7 @@ export default function App() {
 
       {screen === "attempt" && activeQuiz && attempt && (() => {
         const question = activeQuiz.questions[attempt.currentIndex];
+        const passage = activeQuiz.passages?.find((item) => item.id === question.passageId);
         const answer = attempt.answers[question.id];
         const progress = ((attempt.currentIndex + 1) / activeQuiz.questions.length) * 100;
         return (
@@ -415,6 +423,7 @@ export default function App() {
             <section className="question-panel">
               <p className="eyebrow">{question.type === "singleChoice" ? "CHOOSE ONE ANSWER" : question.type === "multipleChoice" ? "CHOOSE ALL THAT APPLY" : "TYPE YOUR ANSWER"}</p>
               <h1 ref={headingRef} tabIndex={-1}>{question.prompt}</h1>
+              {passage && <button className="passage-button" type="button" onClick={() => setOpenPassage(passage)}>Read passage: {passage.title}</button>}
               {question.type === "shortText" ? (
                 <label className="text-answer">
                   <span>Your answer</span>
@@ -471,12 +480,14 @@ export default function App() {
             {activeQuiz.questions.map((question, index) => {
               const answer = result.answers[question.id];
               const correct = isCorrect(question, answer);
+              const passage = activeQuiz.passages?.find((item) => item.id === question.passageId);
               return (
                 <article className={`review-card ${correct ? "correct" : "incorrect"}`} key={question.id}>
                   <div className="review-status" aria-label={correct ? "Correct" : "Incorrect"}>{correct ? "✓" : "×"}</div>
                   <div>
                     <span className="card-label">QUESTION {index + 1}</span>
                     <h3>{question.prompt}</h3>
+                    {passage && <button className="passage-button" type="button" onClick={() => setOpenPassage(passage)}>Read passage: {passage.title}</button>}
                     <p><b>Your answer:</b> {userAnswerText(question, answer)}</p>
                     {!correct && <p><b>Correct answer:</b> {correctAnswerText(question)}</p>}
                     {question.explanation && <p className="explanation">{question.explanation}</p>}
@@ -491,6 +502,7 @@ export default function App() {
           </div>
         </main>
       )}
+      {openPassage && <ReadingPassageDialog passage={openPassage} onClose={() => setOpenPassage(undefined)} />}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 # Quiz Platform
 
-A small, offline-first quiz app for the web and Android. Import AI-generated JSON quizzes with optional illustrated study guides, search or delete them, answer one question at a time, leave and resume, then review your score and explanations. Data stays on the current device by default, with optional Supabase account sync.
+A small, offline-first quiz app for the web and Android. Import AI-generated JSON quizzes with optional illustrated study guides or shared reading passages, search or delete them, answer one question at a time, leave and resume, then review your score and explanations. Data stays on the current device by default, with optional Supabase account sync.
 
 ## Run locally
 
@@ -19,9 +19,11 @@ Run unit and component tests with `npm test`, create a production build with `np
 2. Give the prompt to an AI assistant and save its JSON response as a `.json` file.
 3. Open Quiz Platform, choose **Import quiz**, then select the file or paste the JSON response directly.
 
-The importer validates the complete file before saving it. The exact versioned contract is documented in [`docs/JSON_FORMAT.md`](docs/JSON_FORMAT.md), with a ready-to-import example at [`public/examples/basic-math.json`](public/examples/basic-math.json).
+The importer validates the complete file before saving it. The exact versioned contract is documented in [`docs/JSON_FORMAT.md`](docs/JSON_FORMAT.md), with ready-to-import examples for [Basic Mathematics](public/examples/basic-math.json) and [reading practice](public/examples/reading-practice.json).
 
 A quiz may include `learningMaterial` with explanatory sections, key points, and structured `flow`, `comparison`, or `distribution` illustrations. The guide is imported and synced with the quiz and remains available offline.
+
+For reading practice, add source text once in `quiz.passages` and give multiple questions the same `passageId`. Learners can open the passage beside each question and while reviewing answers. The reading example demonstrates this with one passage and four questions. This is an original practice example, not an official IELTS exercise.
 
 Additional ready-to-import quiz files are kept in [`sample-quizzes`](sample-quizzes), including a Vietnamese introduction to AI.
 

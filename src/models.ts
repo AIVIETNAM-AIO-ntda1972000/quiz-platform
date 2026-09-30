@@ -1,6 +1,6 @@
 export type ChoiceOption = { id: string; text: string };
 
-type BaseQuestion = { id: string; prompt: string; explanation?: string };
+type BaseQuestion = { id: string; prompt: string; explanation?: string; passageId?: string };
 
 export type SingleChoiceQuestion = BaseQuestion & {
   type: "singleChoice";
@@ -56,11 +56,18 @@ export type LearningMaterial = {
   sections: LearningSection[];
 };
 
+export type ReadingPassage = {
+  id: string;
+  title: string;
+  paragraphs: string[];
+};
+
 export type Quiz = {
   id: string;
   title: string;
   description?: string;
   learningMaterial?: LearningMaterial;
+  passages?: ReadingPassage[];
   questions: Question[];
 };
 export type QuizFile = { schemaVersion: 1; quiz: Quiz };

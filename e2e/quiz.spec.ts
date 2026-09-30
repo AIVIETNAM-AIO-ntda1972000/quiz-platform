@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import { readFileSync } from "node:fs";
 
 const decisionTreeQuiz = JSON.parse(readFileSync(new URL("../sample-quizzes/decision-tree-practical-work.json", import.meta.url), "utf8"));
+const readingQuiz = JSON.parse(readFileSync(new URL("../public/examples/reading-practice.json", import.meta.url), "utf8"));
 
 const importedQuiz = {
   schemaVersion: 1,
@@ -73,4 +74,42 @@ test("imports and renders the illustrated decision-tree guide", async ({ page })
   await expect(page.getByRole("heading", { name: "Decision Trees: From Node Impurity to Reliable Models" })).toBeVisible();
   await expect(page.getByRole("img")).toHaveCount(6);
   await expect(page.getByRole("heading", { name: "Impurity measures class mixture inside a node" })).toBeVisible();
+});
+
+test("reuses a reading passage across questions, review, and offline reload", async ({ page, context }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Import quiz" }).click();
+  await page.getByLabel("Choose a JSON file").setInputFiles({
+    name: "reading-practice.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(JSON.stringify(readingQuiz))
+  });
+  await page.getByRole("button", { name: "Start Reading Practice: Urban Wetlands" }).click();
+  await page.getByRole("button", { name: "Read passage: The Return of Urban Wetlands" }).click();
+  await expect(page.getByRole("dialog", { name: "The Return of Urban Wetlands" })).toContainText("city planners often drained wetlands");
+  await page.getByRole("button", { name: "Close passage" }).click();
+  await page.getByText("To explain why some cities restore wetlands and what those wetlands can and cannot do").click();
+  await page.getByRole("button", { name: /Next question/ }).click();
+  await page.reload();
+  await page.getByRole("button", { name: "Resume Reading Practice: Urban Wetlands" }).click();
+  await page.getByRole("button", { name: "Read passage: The Return of Urban Wetlands" }).click();
+  await expect(page.getByRole("dialog")).toContainText("city planners often drained wetlands");
+  await page.getByRole("button", { name: "Close passage" }).click();
+  await page.getByText("They hold rainwater temporarily.").click();
+  await page.getByText("They provide habitat for birds and insects.").click();
+  await page.getByRole("button", { name: /Next question/ }).click();
+  await page.getByLabel("Your answer").fill("native species");
+  await page.getByRole("button", { name: /Next question/ }).click();
+  await page.getByText("To show that wetlands work best as one part of a wider flood strategy").click();
+  await page.getByRole("button", { name: "Finish quiz" }).click();
+  await expect(page.getByText("100%")).toBeVisible();
+  await page.getByRole("button", { name: "Read passage: The Return of Urban Wetlands" }).first().click();
+  await expect(page.getByRole("dialog")).toContainText("city planners often drained wetlands");
+  await page.getByRole("button", { name: "Close passage" }).click();
+  await page.evaluate(() => navigator.serviceWorker.ready);
+  await context.setOffline(true);
+  await page.goto("/");
+  await page.getByRole("button", { name: "Start Reading Practice: Urban Wetlands" }).click();
+  await page.getByRole("button", { name: "Read passage: The Return of Urban Wetlands" }).click();
+  await expect(page.getByRole("dialog")).toContainText("city planners often drained wetlands");
 });

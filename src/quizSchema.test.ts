@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import downloadableExample from "../public/examples/basic-math.json";
+import readingExample from "../public/examples/reading-practice.json";
 import decisionTreeQuiz from "../sample-quizzes/decision-tree-practical-work.json";
 import vietnameseAiQuiz from "../sample-quizzes/kien-thuc-ai-co-ban.json";
 import { exampleQuizFile } from "./exampleQuiz";
@@ -41,6 +42,34 @@ describe("quiz validation", () => {
       "comparison",
       "distribution"
     ]);
+  });
+
+  it("accepts a passage reused by different question types", () => {
+    const result = validateQuizFile(readingExample);
+    expect(result.success).toBe(true);
+    expect(readingExample.quiz.questions.map((question) => question.passageId)).toEqual([
+      "wetlands", "wetlands", "wetlands", "wetlands"
+    ]);
+  });
+
+  it("rejects duplicate passage ids and missing passage references", () => {
+    const invalid = structuredClone(readingExample);
+    invalid.quiz.passages.push({ ...invalid.quiz.passages[0] });
+    invalid.quiz.questions[1].passageId = "missing";
+    const result = validateQuizFile(invalid);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.errors).toContain("quiz.passages.1.id: Duplicate passage id: wetlands");
+      expect(result.errors).toContain("quiz.questions.1.passageId: Passage id does not exist: missing");
+    }
+  });
+
+  it("requires non-empty passage paragraphs", () => {
+    const invalid = structuredClone(readingExample);
+    invalid.quiz.passages[0].paragraphs[0] = "   ";
+    const result = validateQuizFile(invalid);
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.errors.some((error) => error.startsWith("quiz.passages.0.paragraphs.0:"))).toBe(true);
   });
 
   it("returns a useful error for invalid JSON", () => {

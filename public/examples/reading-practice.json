@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "quiz": {
+    "id": "urban-wetlands-reading",
+    "title": "Reading Practice: Urban Wetlands",
+    "description": "Read one passage and answer four questions about its main idea, details, and implications.",
+    "passages": [
+      {
+        "id": "wetlands",
+        "title": "The Return of Urban Wetlands",
+        "paragraphs": [
+          "For much of the twentieth century, city planners often drained wetlands to make space for roads and buildings. The land appeared easier to develop, but the change also removed a natural place for rainwater to collect. During heavy storms, water reached streets more quickly and sometimes overwhelmed drainage systems.",
+          "In recent years, some cities have restored small wetlands. These areas hold rainwater temporarily and release it slowly. They can also provide habitat for birds and insects. Restoration does not mean leaving a site entirely alone: workers may remove rubbish, plant native species, and monitor water quality.",
+          "Wetlands are not a complete solution to urban flooding. Their capacity depends on their size and location, and extreme storms may still exceed it. However, when combined with well-maintained drains and sensible building rules, they can reduce pressure on other parts of a city's water system."
+        ]
+      }
+    ],
+    "questions": [
+      {
+        "id": "q1",
+        "type": "singleChoice",
+        "passageId": "wetlands",
+        "prompt": "What is the main purpose of the passage?",
+        "options": [
+          { "id": "a", "text": "To argue that cities should remove all roads near wetlands" },
+          { "id": "b", "text": "To explain why some cities restore wetlands and what those wetlands can and cannot do" },
+          { "id": "c", "text": "To compare the sizes of wetlands in different countries" }
+        ],
+        "correctOptionId": "b",
+        "explanation": "The passage describes the benefits, maintenance needs, and limits of restored wetlands."
+      },
+      {
+        "id": "q2",
+        "type": "multipleChoice",
+        "passageId": "wetlands",
+        "prompt": "Which two benefits of restored wetlands are stated in the passage?",
+        "options": [
+          { "id": "a", "text": "They hold rainwater temporarily." },
+          { "id": "b", "text": "They eliminate the need for drainage systems." },
+          { "id": "c", "text": "They provide habitat for birds and insects." },
+          { "id": "d", "text": "They prevent every extreme storm from causing floods." }
+        ],
+        "correctOptionIds": ["a", "c"],
+        "explanation": "The second paragraph states both benefits; the third says wetlands are not a complete flood solution."
+      },
+      {
+        "id": "q3",
+        "type": "shortText",
+        "passageId": "wetlands",
+        "prompt": "What kind of species may workers plant during restoration?",
+        "acceptedAnswers": ["native species"],
+        "explanation": "The second paragraph says workers may plant native species."
+      },
+      {
+        "id": "q4",
+        "type": "singleChoice",
+        "passageId": "wetlands",
+        "prompt": "Why does the author mention well-maintained drains and building rules?",
+        "options": [
+          { "id": "a", "text": "To show that wetlands work best as one part of a wider flood strategy" },
+          { "id": "b", "text": "To suggest that wetlands have no value" },
+          { "id": "c", "text": "To claim that drains create habitats for birds" }
+        ],
+        "correctOptionId": "a",
+        "explanation": "The final paragraph presents wetlands as a helpful measure when combined with other measures."
+      }
+    ]
+  }
+}
