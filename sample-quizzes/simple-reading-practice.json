@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "quiz": {
+    "id": "community-garden-reading",
+    "title": "Reading Practice: Community Garden",
+    "description": "A short passage with three questions to try the reading feature.",
+    "passages": [
+      {
+        "id": "garden-passage",
+        "title": "The Community Garden",
+        "paragraphs": [
+          "Last year, residents turned an empty lot into a community garden. Volunteers planted vegetables and flowers, while a nearby school helped build raised beds. The garden is open every Saturday morning.",
+          "The project gives neighbors a place to meet and provides fresh vegetables for a local food bank. During dry weeks, volunteers collect rainwater from a storage tank instead of using drinking water."
+        ]
+      }
+    ],
+    "questions": [
+      {
+        "id": "q1",
+        "type": "singleChoice",
+        "passageId": "garden-passage",
+        "prompt": "When is the garden open?",
+        "options": [
+          { "id": "a", "text": "Every Saturday morning" },
+          { "id": "b", "text": "Every Sunday evening" }
+        ],
+        "correctOptionId": "a",
+        "explanation": "The first paragraph says the garden is open every Saturday morning."
+      },
+      {
+        "id": "q2",
+        "type": "multipleChoice",
+        "passageId": "garden-passage",
+        "prompt": "Which two benefits of the garden are mentioned?",
+        "options": [
+          { "id": "a", "text": "Neighbors have a place to meet." },
+          { "id": "b", "text": "A food bank receives fresh vegetables." },
+          { "id": "c", "text": "The school gets a new sports field." }
+        ],
+        "correctOptionIds": ["a", "b"],
+        "explanation": "The second paragraph mentions meeting neighbors and providing vegetables to a food bank."
+      },
+      {
+        "id": "q3",
+        "type": "shortText",
+        "passageId": "garden-passage",
+        "prompt": "What do volunteers collect during dry weeks?",
+        "acceptedAnswers": ["rainwater", "rain water"],
+        "explanation": "Volunteers collect rainwater from a storage tank."
+      }
+    ]
+  }
+}
