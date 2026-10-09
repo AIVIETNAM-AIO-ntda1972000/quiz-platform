@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { exampleQuizFile } from "./exampleQuiz";
 import type { Quiz } from "./models";
 import richExample from "../public/examples/rich-reading.json";
-import readingExample from "../public/examples/reading-practice.json";
+import readingExample from "../sample-quizzes/plain-reading-practice.json";
 import { loadReadingPosition, saveReadingPosition } from "./readingPosition";
 import { clearQuizProgress, deleteQuiz, exportStorageSnapshot, initializeQuizLibrary, loadAttempt, loadQuizzes, loadResult, saveAttempt, saveQuiz, saveResult } from "./storage";
 

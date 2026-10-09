@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import downloadableExample from "../public/examples/basic-math.json";
-import readingExample from "../public/examples/reading-practice.json";
+import readingExample from "../sample-quizzes/plain-reading-practice.json";
 import richExample from "../public/examples/rich-reading.json";
 import decisionTreeQuiz from "../sample-quizzes/decision-tree-practical-work.json";
 import vietnameseAiQuiz from "../sample-quizzes/kien-thuc-ai-co-ban.json";

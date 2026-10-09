@@ -2,9 +2,50 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
-import readingExample from "../public/examples/reading-practice.json";
+import readingExample from "../sample-quizzes/plain-reading-practice.json";
+import { exampleQuizFile } from "./exampleQuiz";
 import type { Quiz } from "./models";
 import { saveQuiz } from "./storage";
+
+type AnswerableQuestion = {
+  prompt: string;
+  type: string;
+  options: Array<{ id: string; text: string }>;
+  correctOptionId: string;
+  correctOptionIds: string[];
+  acceptedAnswers: string[];
+};
+
+function answerable(quiz: { questions: unknown[] }): AnswerableQuestion[] {
+  return quiz.questions as AnswerableQuestion[];
+}
+
+/** Click an answer option by its text. The option id is no longer rendered, so match the text span. */
+async function chooseOption(user: ReturnType<typeof userEvent.setup>, text: string) {
+  const option = Array.from(document.querySelectorAll(".choice"))
+    .find((choice) => choice.querySelector("span:last-child")?.textContent === text);
+  if (!option) throw new Error(`No answer option on screen contains the text: ${text}`);
+  await user.click(option);
+}
+
+/** Answer whatever question is on screen until the quiz is finished, so tests survive a random attempt order. */
+async function completeQuiz(user: ReturnType<typeof userEvent.setup>, questions: AnswerableQuestion[]) {
+  const shownPrompt = () => document.querySelector(".question-panel h1")?.textContent ?? "";
+  for (let answered = 0; answered <= questions.length; answered += 1) {
+    await waitFor(() => expect(questions.some((question) => question.prompt === shownPrompt())).toBe(true));
+    const current = questions.find((question) => question.prompt === shownPrompt())!;
+    if (current.type === "shortText") await user.type(screen.getByLabelText("Your answer"), current.acceptedAnswers[0]);
+    else {
+      const correctIds = current.type === "singleChoice" ? [current.correctOptionId] : current.correctOptionIds;
+      for (const id of correctIds) await chooseOption(user, current.options.find((option) => option.id === id)!.text);
+    }
+    if (screen.queryByRole("button", { name: "Finish quiz" })) {
+      await user.click(screen.getByRole("button", { name: "Finish quiz" }));
+      return;
+    }
+    await user.click(screen.getByRole("button", { name: /Next question/ }));
+  }
+}
 
 describe("Quiz Platform", () => {
   beforeEach(() => {
@@ -128,13 +169,7 @@ describe("Quiz Platform", () => {
     const user = userEvent.setup();
     render(<App />);
     await user.click(screen.getByRole("button", { name: "Start Basic Mathematics" }));
-    await user.click(screen.getByText("4"));
-    await user.click(screen.getByRole("button", { name: /Next question/ }));
-    await user.click(screen.getByText("2"));
-    await user.click(screen.getByText("4"));
-    await user.click(screen.getByRole("button", { name: /Next question/ }));
-    await user.type(screen.getByLabelText("Your answer"), "  PARIS ");
-    await user.click(screen.getByRole("button", { name: "Finish quiz" }));
+    await completeQuiz(user, answerable(exampleQuizFile.quiz));
     expect(screen.getByText("100%")).toBeInTheDocument();
     expect(screen.getAllByLabelText("Correct")).toHaveLength(3);
     expect(screen.queryByText("Correct answer:")).not.toBeInTheDocument();
@@ -172,18 +207,27 @@ describe("Quiz Platform", () => {
     await user.click(screen.getByRole("button", { name: "Close passage" }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 
-    await user.click(screen.getByText("To explain why some cities restore wetlands and what those wetlands can and cannot do"));
-    await user.click(screen.getByRole("button", { name: /Next question/ }));
-    await user.click(screen.getByRole("button", { name: "Read passage: The Return of Urban Wetlands" }));
-    expect(screen.getByRole("dialog")).toHaveTextContent("city planners often drained wetlands");
-    await user.click(screen.getByRole("button", { name: "Close passage" }));
-    await user.click(screen.getByText("They hold rainwater temporarily."));
-    await user.click(screen.getByText("They provide habitat for birds and insects."));
-    await user.click(screen.getByRole("button", { name: /Next question/ }));
-    await user.type(screen.getByLabelText("Your answer"), "native species");
-    await user.click(screen.getByRole("button", { name: /Next question/ }));
-    await user.click(screen.getByText("To show that wetlands work best as one part of a wider flood strategy"));
-    await user.click(screen.getByRole("button", { name: "Finish quiz" }));
+    const questions = answerable(readingExample.quiz);
+    for (const question of questions) {
+      await waitFor(() => expect(questions.some((item) => item.prompt === document.querySelector(".question-panel h1")?.textContent)).toBe(true));
+      const current = questions.find((item) => item.prompt === document.querySelector(".question-panel h1")?.textContent)!;
+      await user.click(screen.getByRole("button", { name: "Read passage: The Return of Urban Wetlands" }));
+      expect(screen.getByRole("dialog")).toHaveTextContent("city planners often drained wetlands");
+      await user.click(screen.getByRole("button", { name: "Close passage" }));
+      if (current.type === "singleChoice") {
+        const correct = current.options.find((option) => option.id === current.correctOptionId)!;
+        await chooseOption(user, correct.text);
+      } else if (current.type === "multipleChoice") {
+        for (const option of current.options.filter((item) => current.correctOptionIds.includes(item.id))) {
+          await chooseOption(user, option.text);
+        }
+      } else await user.type(screen.getByLabelText("Your answer"), current.acceptedAnswers[0]);
+      if (screen.queryByRole("button", { name: "Finish quiz" })) {
+        await user.click(screen.getByRole("button", { name: "Finish quiz" }));
+        break;
+      }
+      await user.click(screen.getByRole("button", { name: /Next question/ }));
+    }
     expect(screen.getByText("100%")).toBeInTheDocument();
     await user.click(screen.getAllByRole("button", { name: "Read passage: The Return of Urban Wetlands" })[0]);
     expect(screen.getByRole("dialog")).toHaveTextContent("city planners often drained wetlands");
@@ -193,7 +237,11 @@ describe("Quiz Platform", () => {
     const user = userEvent.setup();
     const view = render(<App />);
     await user.click(screen.getByRole("button", { name: "Start Basic Mathematics" }));
-    await user.click(screen.getByText("4"));
+    await waitFor(() => expect(document.querySelector(".question-panel h1")).not.toBeNull());
+    const [first] = answerable(exampleQuizFile.quiz)
+      .filter((question) => question.type !== "shortText");
+    const correctId = first.type === "singleChoice" ? first.correctOptionId : first.correctOptionIds[0];
+    await chooseOption(user, first.options.find((option) => option.id === correctId)!.text);
     await user.click(screen.getByRole("button", { name: /Next question/ }));
     view.unmount();
     render(<App />);

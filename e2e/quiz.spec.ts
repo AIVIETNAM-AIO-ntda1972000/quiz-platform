@@ -2,8 +2,51 @@ import { expect, test } from "@playwright/test";
 import { readFileSync } from "node:fs";
 
 const decisionTreeQuiz = JSON.parse(readFileSync(new URL("../sample-quizzes/decision-tree-practical-work.json", import.meta.url), "utf8"));
-const readingQuiz = JSON.parse(readFileSync(new URL("../public/examples/reading-practice.json", import.meta.url), "utf8"));
+const readingQuiz = JSON.parse(readFileSync(new URL("../sample-quizzes/plain-reading-practice.json", import.meta.url), "utf8"));
 const richQuiz = JSON.parse(readFileSync(new URL("../public/examples/rich-reading.json", import.meta.url), "utf8"));
+const basicQuiz = JSON.parse(readFileSync(new URL("../public/examples/basic-math.json", import.meta.url), "utf8"));
+
+type QuizFixture = {
+  quiz: {
+    questions: Array<{
+      prompt: string;
+      type: string;
+      options?: Array<{ id: string; text: string }>;
+      correctOptionId?: string;
+      correctOptionIds?: string[];
+      acceptedAnswers?: string[];
+    }>;
+  };
+};
+
+/** Answer whatever question is on screen, so the test survives a random question order. */
+async function answerCurrentQuestion(page: import("@playwright/test").Page, fixture: QuizFixture): Promise<void> {
+  const prompt = await page.getByRole("heading", { level: 1 }).innerText();
+  const question = fixture.quiz.questions.find((item) => item.prompt === prompt);
+  if (!question) throw new Error(`The fixture has no question with the prompt: ${prompt}`);
+  if (question.type === "shortText") {
+    await page.getByLabel("Your answer").fill(question.acceptedAnswers![0]);
+    return;
+  }
+  const correctIds = question.type === "singleChoice" ? [question.correctOptionId!] : question.correctOptionIds!;
+  for (const id of correctIds) {
+    const text = question.options!.find((option) => option.id === id)!.text;
+    await page.locator(".choice", { hasText: text }).click();
+  }
+}
+
+/** Answer every question in whatever order it appears, until the quiz is finished. */
+async function completeQuiz(page: import("@playwright/test").Page, fixture: QuizFixture): Promise<void> {
+  for (let answered = 0; answered <= fixture.quiz.questions.length; answered += 1) {
+    await answerCurrentQuestion(page, fixture);
+    if (await page.getByRole("button", { name: "Finish quiz" }).isVisible()) {
+      await page.getByRole("button", { name: "Finish quiz" }).click();
+      return;
+    }
+    await page.getByRole("button", { name: /Next question/ }).click();
+  }
+  throw new Error("The quiz never reached its last question");
+}
 
 const importedQuiz = {
   schemaVersion: 1,
@@ -81,7 +124,7 @@ test("reuses a reading passage across questions, review, and offline reload", as
   await page.goto("/");
   await page.getByRole("button", { name: "Import quiz" }).click();
   await page.getByLabel("Choose a JSON file").setInputFiles({
-    name: "reading-practice.json",
+    name: "plain-reading-practice.json",
     mimeType: "application/json",
     buffer: Buffer.from(JSON.stringify(readingQuiz))
   });
@@ -89,19 +132,18 @@ test("reuses a reading passage across questions, review, and offline reload", as
   await page.getByRole("button", { name: "Read passage: The Return of Urban Wetlands" }).click();
   await expect(page.getByRole("dialog", { name: "The Return of Urban Wetlands" })).toContainText("city planners often drained wetlands");
   await page.getByRole("button", { name: "Close passage" }).click();
-  await page.getByText("To explain why some cities restore wetlands and what those wetlands can and cannot do").click();
+  await answerCurrentQuestion(page, readingQuiz);
   await page.getByRole("button", { name: /Next question/ }).click();
   await page.reload();
   await page.getByRole("button", { name: "Resume Reading Practice: Urban Wetlands" }).click();
   await page.getByRole("button", { name: "Read passage: The Return of Urban Wetlands" }).click();
   await expect(page.getByRole("dialog")).toContainText("city planners often drained wetlands");
   await page.getByRole("button", { name: "Close passage" }).click();
-  await page.getByText("They hold rainwater temporarily.").click();
-  await page.getByText("They provide habitat for birds and insects.").click();
+  await answerCurrentQuestion(page, readingQuiz);
   await page.getByRole("button", { name: /Next question/ }).click();
-  await page.getByLabel("Your answer").fill("native species");
+  await answerCurrentQuestion(page, readingQuiz);
   await page.getByRole("button", { name: /Next question/ }).click();
-  await page.getByText("To show that wetlands work best as one part of a wider flood strategy").click();
+  await answerCurrentQuestion(page, readingQuiz);
   await page.getByRole("button", { name: "Finish quiz" }).click();
   await expect(page.getByText("100%")).toBeVisible();
   await page.getByRole("button", { name: "Read passage: The Return of Urban Wetlands" }).first().click();
@@ -113,6 +155,58 @@ test("reuses a reading passage across questions, review, and offline reload", as
   await page.getByRole("button", { name: "Start Reading Practice: Urban Wetlands" }).click();
   await page.getByRole("button", { name: "Read passage: The Return of Urban Wetlands" }).click();
   await expect(page.getByRole("dialog")).toContainText("city planners often drained wetlands");
+});
+
+test("offers exactly two downloadable starting-point examples", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Import quiz" }).click();
+  const exampleLinks = page.locator(".resource-actions a[download]");
+  await expect(exampleLinks).toHaveText(["Quiz example", "Reading material example", "AI prompt", "Rich AI prompt"]);
+  await expect(exampleLinks.first()).toHaveAttribute("href", "/examples/basic-math.json");
+  await expect(exampleLinks.nth(1)).toHaveAttribute("href", "/examples/rich-reading.json");
+  await expect(page.getByRole("link", { name: "Reading example" })).toHaveCount(0);
+
+  await page.locator('input[type="file"]').setInputFiles({
+    name: "rich-reading.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(JSON.stringify(richQuiz)),
+  });
+  await expect(page.getByRole("heading", { name: "Reading Practice: A Small Neural Network" })).toBeVisible();
+});
+
+test("shuffles question and choice order for every new attempt", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Import quiz" }).click();
+  await page.getByLabel("Choose a JSON file").setInputFiles({
+    name: "plain-reading-practice.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(JSON.stringify(readingQuiz))
+  });
+
+  const shownOrder = async (): Promise<string> => `${await page.getByRole("heading", { level: 1 }).innerText()} | ${(await page.locator(".choice").allInnerTexts()).join(" / ")}`;
+  const storedSeed = async (): Promise<number> => {
+    const stored = await page.evaluate(() => localStorage.getItem("quiz-platform:attempts"));
+    return (JSON.parse(stored ?? "{}")["urban-wetlands-reading"] as { shuffleSeed: number }).shuffleSeed;
+  };
+
+  await page.getByRole("button", { name: "Start Reading Practice: Urban Wetlands" }).click();
+  const firstAttempt = await shownOrder();
+  const firstSeed = await storedSeed();
+
+  await page.reload();
+  await page.getByRole("button", { name: "Resume Reading Practice: Urban Wetlands" }).click();
+  expect(await shownOrder()).toBe(firstAttempt);
+  expect(await storedSeed()).toBe(firstSeed);
+
+  await completeQuiz(page, readingQuiz);
+  await expect(page.getByText("100%")).toBeVisible();
+
+  const seeds = new Set([firstSeed]);
+  for (let attempt = 0; attempt < 5 && seeds.size < 2; attempt += 1) {
+    await page.getByRole("button", { name: "Try again" }).click();
+    seeds.add(await storedSeed());
+  }
+  expect(seeds.size).toBeGreaterThan(1);
 });
 
 test("renders rich reading offline, restores position, and reveals answers only on request", async ({ page, context }) => {
@@ -165,15 +259,14 @@ test("renders rich reading offline, restores position, and reveals answers only 
   await page.getByRole("button", { name: "Read passage: How a Neural Network Learns" }).click();
   await expect.poll(() => scrollArea.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
   await page.getByRole("button", { name: "Close passage" }).click();
-  await page.getByText("Numbers learned from examples").click();
+  await answerCurrentQuestion(page, richQuiz);
   await page.getByRole("button", { name: /Next question/ }).click();
   await page.getByRole("button", { name: "Read passage: How a Neural Network Learns" }).click();
   await expect.poll(() => scrollArea.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
   await page.getByRole("button", { name: "Close passage" }).click();
-  await page.getByText("Loss measures prediction error.").click();
-  await page.getByText("Validation data can help assess performance on new examples.").click();
+  await answerCurrentQuestion(page, richQuiz);
   await page.getByRole("button", { name: /Next question/ }).click();
-  await page.getByLabel("Your answer").fill("optimizer");
+  await answerCurrentQuestion(page, richQuiz);
   await page.getByRole("button", { name: "Finish quiz" }).click();
   await expect(page.getByText("100%")).toBeVisible();
   await expect(page.getByText("Correct answer:")).toHaveCount(0);

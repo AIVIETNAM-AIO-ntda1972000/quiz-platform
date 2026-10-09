@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { QuizFile } from "../../../src/models";
-import readingExample from "../../../public/examples/reading-practice.json";
+import readingExample from "../../../sample-quizzes/plain-reading-practice.json";
 import richExample from "../../../public/examples/rich-reading.json";
 import {
   MAX_PENDING_QUIZZES,

@@ -10,6 +10,7 @@ import { useQuizInbox, type QuizInboxItem } from "./quizInbox";
 import { parseQuizJson, validateQuizFile } from "./quizSchema";
 import { ReadingPassageDialog } from "./ReadingPassageDialog";
 import { clearAttempt, clearQuizProgress, deleteQuiz, initializeQuizLibrary, loadAttempt, loadQuizzes, loadResult, saveAttempt, saveQuiz, saveResult } from "./storage";
+import { displayOptions, displayQuestions, newShuffleSeed } from "./shuffle";
 import { applyTheme, getSavedTheme, getThemeMediaQuery, resolveTheme, saveThemePreference, type Theme } from "./theme";
 import { useWebMcp } from "./webMcp";
 
@@ -112,7 +113,13 @@ export default function App() {
     setOpenPassage(undefined);
     if (fresh) clearAttempt(quiz.id);
     const saved = fresh ? undefined : loadAttempt(quiz.id);
-    const nextAttempt: Attempt = saved ?? { quizId: quiz.id, answers: {}, currentIndex: 0, updatedAt: new Date().toISOString() };
+    const nextAttempt: Attempt = saved ?? {
+      quizId: quiz.id,
+      answers: {},
+      currentIndex: 0,
+      updatedAt: new Date().toISOString(),
+      shuffleSeed: newShuffleSeed(),
+    };
     if (!saved) saveAttempt(nextAttempt);
     setActiveQuiz(quiz);
     setAttempt(nextAttempt);
@@ -140,7 +147,8 @@ export default function App() {
   const moveTo = (index: number) => {
     if (!attempt || !activeQuiz) return;
     setOpenPassage(undefined);
-    const next = { ...attempt, currentIndex: Math.max(0, Math.min(index, activeQuiz.questions.length - 1)), updatedAt: new Date().toISOString() };
+    const lastIndex = Math.max(0, displayQuestions(activeQuiz, attempt).length - 1);
+    const next = { ...attempt, currentIndex: Math.max(0, Math.min(index, lastIndex)), updatedAt: new Date().toISOString() };
     setAttempt(next);
     saveAttempt(next);
   };
@@ -435,11 +443,10 @@ export default function App() {
             </div>
           )}
           <div className="resource-row">
-            <div><strong>Need a starting point?</strong><span>Download the example or use the AI prompt.</span></div>
+            <div><strong>Need a starting point?</strong><span>Download an example or use the AI prompt.</span></div>
             <div className="resource-actions">
-              <a href={`${import.meta.env.BASE_URL}examples/basic-math.json`} download>Example JSON</a>
-              <a href={`${import.meta.env.BASE_URL}examples/reading-practice.json`} download>Reading example</a>
-              <a href={`${import.meta.env.BASE_URL}examples/rich-reading.json`} download>Rich reading example</a>
+              <a href={`${import.meta.env.BASE_URL}examples/basic-math.json`} download>Quiz example</a>
+              <a href={`${import.meta.env.BASE_URL}examples/rich-reading.json`} download>Reading material example</a>
               <a href={`${import.meta.env.BASE_URL}AI_PROMPT.md`} download>AI prompt</a>
               <a href={`${import.meta.env.BASE_URL}AI_RICH_PROMPT.md`} download>Rich AI prompt</a>
             </div>
@@ -448,15 +455,16 @@ export default function App() {
       )}
 
       {screen === "attempt" && activeQuiz && attempt && (() => {
-        const question = activeQuiz.questions[attempt.currentIndex];
+        const questions = displayQuestions(activeQuiz, attempt);
+        const question = questions[attempt.currentIndex];
         const passage = activeQuiz.passages?.find((item) => item.id === question.passageId);
         const answer = attempt.answers[question.id];
-        const progress = ((attempt.currentIndex + 1) / activeQuiz.questions.length) * 100;
+        const progress = ((attempt.currentIndex + 1) / questions.length) * 100;
         return (
           <main className="attempt-page">
             <div className="attempt-header">
               <button className="back-link" type="button" onClick={goHome}>← Save & leave</button>
-              <span>Question {attempt.currentIndex + 1} of {activeQuiz.questions.length}</span>
+              <span>Question {attempt.currentIndex + 1} of {questions.length}</span>
             </div>
             <div className="progress-track" aria-label={`${Math.round(progress)}% complete`}><span style={{ width: `${progress}%` }} /></div>
             <section className="question-panel">
@@ -471,7 +479,7 @@ export default function App() {
               ) : (
                 <fieldset className="choice-list">
                   <legend className="sr-only">Answer choices</legend>
-                  {question.options.map((option) => {
+                  {displayOptions(question, attempt, attempt.currentIndex).map((option, optionIndex) => {
                     const checked = question.type === "singleChoice" ? answer === option.id : Array.isArray(answer) && answer.includes(option.id);
                     return (
                       <label className={`choice ${checked ? "selected" : ""}`} key={option.id}>
@@ -487,7 +495,7 @@ export default function App() {
                             }
                           }}
                         />
-                        <span className="choice-key">{option.id.toUpperCase()}</span><span>{option.text}</span>
+                        <span className="choice-key">{optionIndex + 1}</span><span>{option.text}</span>
                       </label>
                     );
                   })}
@@ -496,7 +504,7 @@ export default function App() {
             </section>
             <div className="attempt-actions">
               <button className="secondary-button" type="button" onClick={() => moveTo(attempt.currentIndex - 1)} disabled={attempt.currentIndex === 0}>Previous</button>
-              {attempt.currentIndex === activeQuiz.questions.length - 1
+              {attempt.currentIndex === questions.length - 1
                 ? <button className="primary-button" type="button" onClick={finishQuiz}>Finish quiz</button>
                 : <button className="primary-button" type="button" onClick={() => moveTo(attempt.currentIndex + 1)}>Next question →</button>}
             </div>

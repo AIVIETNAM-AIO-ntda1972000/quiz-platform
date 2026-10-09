@@ -19,13 +19,15 @@ Run unit and component tests with `npm test`, create a production build with `np
 2. Give the prompt to an AI assistant and save its JSON response as a `.json` file.
 3. Open Quiz Platform, choose **Import quiz**, then select the file or paste the JSON response directly.
 
-The importer validates the complete file before saving it. The exact versioned contract is documented in [`docs/JSON_FORMAT.md`](docs/JSON_FORMAT.md), with ready-to-import examples for [Basic Mathematics](public/examples/basic-math.json) and [reading practice](public/examples/reading-practice.json).
+The importer validates the complete file before saving it. The exact versioned contract is documented in [`docs/JSON_FORMAT.md`](docs/JSON_FORMAT.md), with two ready-to-import starting points: [Basic Mathematics](public/examples/basic-math.json) for a plain quiz, and the [rich reading example](public/examples/rich-reading.json) for reading material.
 
 A quiz may include `learningMaterial` with explanatory sections, key points, and structured `flow`, `comparison`, or `distribution` illustrations. In schema version 2, it may instead point to a rich Markdown passage with `learningMaterial: { "passageId": "lesson" }`. The **Learning material** button opens that document from the library; the same passage may also be linked to questions. Both forms are imported and synced with the quiz and remain available offline.
 
-For reading practice, add source text once in `quiz.passages` and give multiple questions the same `passageId`. Learners can open the passage beside each question and while reviewing answers; the app remembers the reading position on that device. The plain reading example demonstrates this with one passage and four questions. This is an original practice example, not an official IELTS exercise.
+For reading practice, add source text once in `quiz.passages` and give multiple questions the same `passageId`. Learners can open the passage beside each question and while reviewing answers; the app remembers the reading position on that device. The rich reading example demonstrates this with one Markdown lesson and three questions. That practice example is original learning material, not an official IELTS exercise. A plain shared-passage version used by the test suite is kept in [`sample-quizzes/plain-reading-practice.json`](sample-quizzes/plain-reading-practice.json).
 
-For AI or coding lessons, use the [rich reading example](public/examples/rich-reading.json) and [rich AI prompt](public/AI_RICH_PROMPT.md). Schema version 2 passages render Markdown, code, KaTeX math, Mermaid diagrams, and small offline image assets. Raw HTML and remote images are not supported. After completing a quiz, correct answers and explanations stay hidden until **Show answers** is pressed; saved results can be reviewed again from the library.
+For AI or coding lessons, use the [rich reading example](public/examples/rich-reading.json) and [rich AI prompt](public/AI_RICH_PROMPT.md). Schema version 2 passages render Markdown, code, KaTeX math, Mermaid diagrams, and small offline image assets. Raw HTML and remote images are not supported.
+
+Every attempt shuffles the question order and the answer-choice order, and **Try again** draws a new order, so a learner cannot memorize positions instead of answers. The order is fixed for the attempt and survives leaving or reloading the app. Answers are still stored by option ID, and review keeps its stable authored order. After completing a quiz, correct answers and explanations stay hidden until **Show answers** is pressed; saved results can be reviewed again from the library.
 
 Additional ready-to-import quiz files are kept in [`sample-quizzes`](sample-quizzes), including a Vietnamese introduction to AI.
 
