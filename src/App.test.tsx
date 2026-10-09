@@ -238,10 +238,11 @@ describe("Quiz Platform", () => {
     const view = render(<App />);
     await user.click(screen.getByRole("button", { name: "Start Basic Mathematics" }));
     await waitFor(() => expect(document.querySelector(".question-panel h1")).not.toBeNull());
-    const [first] = answerable(exampleQuizFile.quiz)
-      .filter((question) => question.type !== "shortText");
-    const correctId = first.type === "singleChoice" ? first.correctOptionId : first.correctOptionIds[0];
-    await chooseOption(user, first.options.find((option) => option.id === correctId)!.text);
+    // The attempt order is shuffled, so advance from whichever question is actually first.
+    // Option "4" exists on both choice questions in the starter quiz, and the only short-text
+    // question asks for a typed answer, so this covers every possible first question.
+    if (screen.queryByLabelText("Your answer")) await user.type(screen.getByLabelText("Your answer"), "Paris");
+    else await chooseOption(user, "4");
     await user.click(screen.getByRole("button", { name: /Next question/ }));
     view.unmount();
     render(<App />);
