@@ -5,20 +5,21 @@ export const MAX_QUIZ_PAYLOAD_BYTES = 1_048_576;
 export const MAX_PENDING_QUIZZES = 20;
 
 export const QUIZ_CREATION_INSTRUCTIONS = [
-  "Create one quiz JSON object. Use schemaVersion 1 for plain passages and schemaVersion 2 for Markdown passages.",
+  "Create one quiz JSON object. Use schemaVersion 1 for plain passages, schemaVersion 2 for Markdown passages, or schemaVersion 3 when the quiz needs a matching question.",
   "Include quiz.id, quiz.title, and at least one supported question.",
-  "Supported question types are singleChoice, multipleChoice, and shortText.",
-  "Use unique quiz, question, option, and learning-section IDs.",
+  "Supported question types are singleChoice, multipleChoice, shortText, and matching.",
+  "Use unique quiz, question, option, learning-section, and matching-pair IDs.",
   "Choice answers must reference existing option IDs.",
+  "A matching question needs two to twelve pairs; each pair has a unique id, a left-hand prompt, and a match value, and every match value must be distinct.",
   "learningMaterial is optional but recommended for teaching-oriented quizzes.",
-  "In version 2, learningMaterial may be { passageId: an existing passage ID } so the same document opens from the library and from questions.",
+  "In version 2 or 3, learningMaterial may be { passageId: an existing passage ID } so the same document opens from the library and from questions.",
   "For reading practice, define quiz.passages once and link any number of questions with passageId; never repeat the passage in each question.",
-  "Version 2 Markdown passages use format markdown, content, and optional embedded PNG/JPEG/WebP assets; images must use quiz-asset:id URLs. Raw HTML and remote images are forbidden.",
+  "Version 2 and 3 Markdown passages use format markdown, content, and optional embedded PNG/JPEG/WebP assets; images must use quiz-asset:id URLs. Raw HTML and remote images are forbidden.",
   "Call validate_quiz before publish_quiz. Publishing creates a pending draft that the user must accept in the AI Inbox.",
 ].join(" ");
 
 export const QUIZ_CONTRACT = {
-  root: { schemaVersion: [1, 2], quiz: "Quiz" },
+  root: { schemaVersion: [1, 2, 3], quiz: "Quiz" },
   Quiz: {
     required: ["id", "title", "questions"],
     optional: ["description", "learningMaterial", "passages"],
@@ -41,6 +42,11 @@ export const QUIZ_CONTRACT = {
     required: ["id", "type", "prompt", "acceptedAnswers"],
     optional: ["passageId", "explanation"],
     rules: ["type must be shortText", "at least one non-empty accepted answer"],
+  },
+  matching: {
+    required: ["id", "type", "prompt", "pairs"],
+    optional: ["passageId", "explanation"],
+    rules: ["type must be matching", "two to twelve pairs", "each pair needs a unique id, a prompt, and a match", "match values must be distinct", "requires schemaVersion 3"],
   },
   learningMaterial: {
     structuredRequired: ["title", "sections"],

@@ -62,3 +62,14 @@ export function displayOptions(question: Question, attempt: Attempt, questionInd
   }
   return [];
 }
+
+/**
+ * The attempt's right-hand column for a matching question. The left-hand prompts keep the
+ * authored pair order so the rows a learner sees stay in a predictable sequence.
+ */
+export function displayMatches(question: Question, attempt: Attempt, questionIndex: number): string[] {
+  if (question.type !== "matching") return [];
+  const matches = question.pairs.map((pair) => pair.match);
+  if (attempt.shuffleSeed === undefined) return matches;
+  return shuffleItems(matches, questionSeed(attempt.shuffleSeed, question, questionIndex));
+}

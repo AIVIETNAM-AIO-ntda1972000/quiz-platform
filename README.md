@@ -23,6 +23,8 @@ The importer validates the complete file before saving it. The exact versioned c
 
 A quiz may include `learningMaterial` with explanatory sections, key points, and structured `flow`, `comparison`, or `distribution` illustrations. In schema version 2, it may instead point to a rich Markdown passage with `learningMaterial: { "passageId": "lesson" }`. The **Learning material** button opens that document from the library; the same passage may also be linked to questions. Both forms are imported and synced with the quiz and remain available offline.
 
+Question types are `singleChoice`, `multipleChoice`, `shortText`, and `matching`. A `matching` question pairs a left-hand prompt with its answer in a dropdown; it requires `schemaVersion: 3` and grades as correct only when every row is paired correctly.
+
 For reading practice, add source text once in `quiz.passages` and give multiple questions the same `passageId`. Learners can open the passage beside each question and while reviewing answers; the app remembers the reading position on that device. The rich reading example demonstrates this with one Markdown lesson and three questions. That practice example is original learning material, not an official IELTS exercise. A plain shared-passage version used by the test suite is kept in [`sample-quizzes/plain-reading-practice.json`](sample-quizzes/plain-reading-practice.json).
 
 For AI or coding lessons, use the [rich reading example](public/examples/rich-reading.json) and [rich AI prompt](public/AI_RICH_PROMPT.md). Schema version 2 passages render Markdown, code, KaTeX math, Mermaid diagrams, and small offline image assets. Raw HTML and remote images are not supported.

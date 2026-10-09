@@ -10,7 +10,7 @@ import { useQuizInbox, type QuizInboxItem } from "./quizInbox";
 import { parseQuizJson, validateQuizFile } from "./quizSchema";
 import { ReadingPassageDialog } from "./ReadingPassageDialog";
 import { clearAttempt, clearQuizProgress, deleteQuiz, initializeQuizLibrary, loadAttempt, loadQuizzes, loadResult, saveAttempt, saveQuiz, saveResult } from "./storage";
-import { displayOptions, displayQuestions, newShuffleSeed } from "./shuffle";
+import { displayMatches, displayOptions, displayQuestions, newShuffleSeed } from "./shuffle";
 import { applyTheme, getSavedTheme, getThemeMediaQuery, resolveTheme, saveThemePreference, type Theme } from "./theme";
 import { useWebMcp } from "./webMcp";
 
@@ -26,6 +26,7 @@ function hasAnswer(answer: Answer | undefined): boolean {
 
 function correctAnswerText(question: Question): string {
   if (question.type === "shortText") return question.acceptedAnswers.join(" / ");
+  if (question.type === "matching") return question.pairs.map((pair) => `${pair.prompt} → ${pair.match}`).join("; ");
   const ids = question.type === "singleChoice" ? [question.correctOptionId] : question.correctOptionIds;
   return question.options.filter((option) => ids.includes(option.id)).map((option) => option.text).join(", ");
 }
@@ -33,8 +34,19 @@ function correctAnswerText(question: Question): string {
 function userAnswerText(question: Question, answer: Answer | undefined): string {
   if (!hasAnswer(answer)) return "No answer";
   if (question.type === "shortText") return String(answer);
+  if (question.type === "matching") {
+    const selected = Array.isArray(answer) ? answer : [];
+    return question.pairs
+      .map((pair, index) => `${pair.prompt} → ${question.pairs.find((item) => item.id === selected[index])?.match ?? "—"}`)
+      .join("; ");
+  }
   const ids = Array.isArray(answer) ? answer : [answer];
   return question.options.filter((option) => ids.includes(option.id)).map((option) => option.text).join(", ");
+}
+
+function matchingAnswer(answer: Answer | undefined, pairCount: number): string[] {
+  const selected = Array.isArray(answer) ? answer : [];
+  return Array.from({ length: pairCount }, (_unused, index) => selected[index] ?? "");
 }
 
 export default function App() {
@@ -468,7 +480,7 @@ export default function App() {
             </div>
             <div className="progress-track" aria-label={`${Math.round(progress)}% complete`}><span style={{ width: `${progress}%` }} /></div>
             <section className="question-panel">
-              <p className="eyebrow">{question.type === "singleChoice" ? "CHOOSE ONE ANSWER" : question.type === "multipleChoice" ? "CHOOSE ALL THAT APPLY" : "TYPE YOUR ANSWER"}</p>
+              <p className="eyebrow">{question.type === "singleChoice" ? "CHOOSE ONE ANSWER" : question.type === "multipleChoice" ? "CHOOSE ALL THAT APPLY" : question.type === "matching" ? "MATCH EACH ITEM" : "TYPE YOUR ANSWER"}</p>
               <h1 ref={headingRef} tabIndex={-1}>{question.prompt}</h1>
               {passage && <button className="passage-button" type="button" onClick={() => setOpenPassage({ passage, purpose: "question" })}>Read passage: {passage.title}</button>}
               {question.type === "shortText" ? (
@@ -476,7 +488,34 @@ export default function App() {
                   <span>Your answer</span>
                   <input autoComplete="off" value={typeof answer === "string" ? answer : ""} onChange={(event) => updateAnswer(question.id, event.target.value)} placeholder="Type your answer here" />
                 </label>
-              ) : (
+              ) : question.type === "matching" ? (() => {
+                const selected = matchingAnswer(answer, question.pairs.length);
+                const matches = displayMatches(question, attempt, attempt.currentIndex);
+                return (
+                  <fieldset className="matching-list">
+                    <legend className="sr-only">Match each item</legend>
+                    <p className="matching-hint">Choose the answer that matches each item.</p>
+                    {question.pairs.map((pair, pairIndex) => (
+                      <label className="matching-row" key={pair.id}>
+                        <span className="matching-prompt">{pair.prompt}</span>
+                        <select
+                          value={selected[pairIndex]}
+                          onChange={(event) => {
+                            const next = [...selected];
+                            next[pairIndex] = event.target.value;
+                            updateAnswer(question.id, next);
+                          }}
+                        >
+                          <option value="">Choose a match</option>
+                          {matches.map((match) => (
+                            <option value={question.pairs.find((item) => item.match === match)!.id} key={match}>{match}</option>
+                          ))}
+                        </select>
+                      </label>
+                    ))}
+                  </fieldset>
+                );
+              })() : (
                 <fieldset className="choice-list">
                   <legend className="sr-only">Answer choices</legend>
                   {displayOptions(question, attempt, attempt.currentIndex).map((option, optionIndex) => {
