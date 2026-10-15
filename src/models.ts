@@ -19,7 +19,19 @@ export type ShortTextQuestion = BaseQuestion & {
   acceptedAnswers: string[];
 };
 
-export type Question = SingleChoiceQuestion | MultipleChoiceQuestion | ShortTextQuestion;
+/** One row of a matching question: a prompt on the left, its correct match on the right. */
+export type MatchingPair = { id: string; prompt: string; match: string };
+
+export type MatchingQuestion = BaseQuestion & {
+  type: "matching";
+  pairs: MatchingPair[];
+};
+
+export type Question = SingleChoiceQuestion | MultipleChoiceQuestion | ShortTextQuestion | MatchingQuestion;
+
+export function hasChoiceOptions(question: Question): question is SingleChoiceQuestion | MultipleChoiceQuestion {
+  return question.type === "singleChoice" || question.type === "multipleChoice";
+}
 
 export type LearningIllustration =
   | {
@@ -87,7 +99,7 @@ export type Quiz = {
   passages?: ReadingPassage[];
   questions: Question[];
 };
-export type QuizFile = { schemaVersion: 1 | 2; quiz: Quiz };
+export type QuizFile = { schemaVersion: 1 | 2 | 3; quiz: Quiz };
 export type Answer = string | string[];
 export type Attempt = {
   quizId: string;

@@ -4,7 +4,7 @@ import remarkParse from "remark-parse";
 import { visit } from "unist-util-visit";
 import type { QuizFile } from "../src/models.ts";
 
-export const MAX_RICH_QUIZ_BYTES = 1_048_576;
+export const MAX_QUIZ_BYTES = 1_048_576;
 const MAX_IMAGE_BYTES = 262_144;
 const MAX_TOTAL_IMAGE_BYTES = 524_288;
 const MAX_MARKDOWN_BYTES = 102_400;
@@ -81,6 +81,14 @@ const shortTextSchema = z.object({
   acceptedAnswers: z.array(nonEmptyText).min(1, "Add at least one accepted answer"),
 }).strict();
 
+const matchingPairSchema = z.object({ id: nonEmptyText, prompt: nonEmptyText, match: nonEmptyText }).strict();
+
+const matchingSchema = z.object({
+  ...baseQuestion,
+  type: z.literal("matching"),
+  pairs: z.array(matchingPairSchema).min(2, "Add at least two matching pairs").max(12, "Use at most twelve matching pairs"),
+}).strict();
+
 const illustrationItemSchema = z.object({
   label: nonEmptyText,
   detail: nonEmptyText.optional(),
@@ -153,7 +161,7 @@ const quizFields = {
   id: nonEmptyText,
   title: nonEmptyText,
   description: nonEmptyText.optional(),
-  questions: z.array(z.discriminatedUnion("type", [singleChoiceSchema, multipleChoiceSchema, shortTextSchema])).min(1, "Add at least one question"),
+  questions: z.array(z.discriminatedUnion("type", [singleChoiceSchema, multipleChoiceSchema, shortTextSchema, matchingSchema])).min(1, "Add at least one question"),
 };
 
 export const quizFileSchema = z.discriminatedUnion("schemaVersion", [
@@ -167,9 +175,14 @@ export const quizFileSchema = z.discriminatedUnion("schemaVersion", [
     learningMaterial: z.union([learningMaterialSchema, learningMaterialReferenceSchema]).optional(),
     passages: z.array(z.union([readingPassageSchema, markdownPassageSchema])).min(1, "Add at least one passage").max(20, "Use at most twenty passages").optional(),
   }).strict() }).strict(),
+  z.object({ schemaVersion: z.literal(3), quiz: z.object({
+    ...quizFields,
+    learningMaterial: z.union([learningMaterialSchema, learningMaterialReferenceSchema]).optional(),
+    passages: z.array(z.union([readingPassageSchema, markdownPassageSchema])).min(1, "Add at least one passage").max(20, "Use at most twenty passages").optional(),
+  }).strict() }).strict(),
 ]).superRefine((data, context) => {
-  if (data.schemaVersion === 2 && new TextEncoder().encode(JSON.stringify(data)).byteLength > MAX_RICH_QUIZ_BYTES) {
-    context.addIssue({ code: "custom", path: [], message: "Version 2 quiz exceeds the 1 MiB JSON limit" });
+  if (data.schemaVersion !== 1 && new TextEncoder().encode(JSON.stringify(data)).byteLength > MAX_QUIZ_BYTES) {
+    context.addIssue({ code: "custom", path: [], message: "The quiz exceeds the 1 MiB JSON limit" });
   }
   const passageIds = new Set<string>();
   let totalImageBytes = 0;
@@ -230,6 +243,23 @@ export const quizFileSchema = z.discriminatedUnion("schemaVersion", [
       return;
     }
 
+    if (question.type === "matching") {
+      const pairIds = new Set<string>();
+      const matches = new Set<string>();
+      question.pairs.forEach((pair, pairIndex) => {
+        if (pairIds.has(pair.id)) {
+          context.addIssue({ code: "custom", path: ["quiz", "questions", questionIndex, "pairs", pairIndex, "id"], message: `Duplicate matching pair id: ${pair.id}` });
+        }
+        pairIds.add(pair.id);
+        const normalizedMatch = pair.match.normalize("NFKC").trim().replace(/\s+/g, " ").toLowerCase();
+        if (matches.has(normalizedMatch)) {
+          context.addIssue({ code: "custom", path: ["quiz", "questions", questionIndex, "pairs", pairIndex, "match"], message: `Duplicate matching answer: ${pair.match}` });
+        }
+        matches.add(normalizedMatch);
+      });
+      return;
+    }
+
     const optionIds = new Set<string>();
     question.options.forEach((option, optionIndex) => {
       if (optionIds.has(option.id)) {
@@ -260,9 +290,9 @@ export function validateQuizFile(input: unknown): ValidationResult {
 export function parseQuizJson(text: string): ValidationResult {
   try {
     const parsed: unknown = JSON.parse(text);
-    if (parsed && typeof parsed === "object" && "schemaVersion" in parsed && parsed.schemaVersion === 2
-      && new TextEncoder().encode(text).byteLength > MAX_RICH_QUIZ_BYTES) {
-      return { success: false, errors: ["file: Version 2 quiz exceeds the 1 MiB JSON limit"] };
+    if (parsed && typeof parsed === "object" && "schemaVersion" in parsed && parsed.schemaVersion !== 1
+      && new TextEncoder().encode(text).byteLength > MAX_QUIZ_BYTES) {
+      return { success: false, errors: ["file: The quiz exceeds the 1 MiB JSON limit"] };
     }
     return validateQuizFile(parsed);
   } catch {

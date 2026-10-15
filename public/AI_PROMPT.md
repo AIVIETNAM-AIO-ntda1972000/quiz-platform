@@ -2,11 +2,11 @@
 
 Use this universal fallback with any chatbot, including chat interfaces that cannot connect to arbitrary MCP servers. After the chatbot responds, paste the JSON into Quiz Platform's import screen. Do not ask the chatbot to upload or publish anything when using this prompt.
 
-This prompt creates the original plain-text `schemaVersion: 1` format. For Markdown documents with tables, code, math, and Mermaid diagrams, use [`AI_RICH_PROMPT.md`](AI_RICH_PROMPT.md) and `schemaVersion: 2` instead.
+This prompt creates the original plain-text `schemaVersion: 1` format by default. Use `schemaVersion: 2` for Markdown passages (see [`AI_RICH_PROMPT.md`](AI_RICH_PROMPT.md)) and `schemaVersion: 3` when the quiz needs a `matching` question; both later versions accept the same `passages` and `learningMaterial` shapes.
 
 Create a quiz about **[TOPIC]** for a learner at **[LEVEL]**.
 
-Return one valid JSON object only. Do not use Markdown fences, comments, explanations outside the JSON, external URLs, HTML, image data, or properties that are not shown in schema version 1.
+Return one valid JSON object only. Do not use Markdown fences, comments, explanations outside the JSON, external URLs, HTML, image data, or properties that are not shown in this prompt's schema.
 
 Requirements:
 
@@ -16,6 +16,7 @@ Requirements:
 - Create three to six focused study-guide sections covering concepts, reasons, practical steps, and common pitfalls. Each section needs a unique ID, one to eight paragraphs, and may contain one to ten key points and one structured illustration.
 - Use `flow` for two to eight ordered steps, `comparison` for two to six alternatives, and `distribution` for two to six groups of labeled counts. Each distribution group needs one to six segments, and every `count` must be a positive integer.
 - Include an appropriate mix of `singleChoice`, `multipleChoice`, and `shortText` questions. Question IDs must be unique. Option IDs must be unique within each question.
+- Optionally add a `matching` question for terminology or cause-and-effect. It needs `pairs` with two to twelve entries, each with a unique `id`, a left-hand `prompt`, and its `match`. Every `match` value must be different. A `matching` question requires `schemaVersion: 3`, so use schema version 3 whenever the quiz contains one.
 - Every correct choice ID must reference an option in the same question. Include reasonable alternative accepted answers for short text.
 - Keep explanations short and educational. Use illustrations only when they materially improve understanding.
 
@@ -123,5 +124,22 @@ Use this complete example as the structural template:
       }
     ]
   }
+}
+```
+
+### Optional matching question
+
+Add this question to `questions` only when the topic has terms or causal pairs worth matching. A `matching` question requires `schemaVersion: 3`, so also change the root `"schemaVersion"` from `1` to `3` in that response. Each `pairs` entry needs a unique `id`, a left-hand `prompt`, and its own `match`; every `match` value must be different from the others.
+
+```json
+{
+  "id": "q4",
+  "type": "matching",
+  "prompt": "Match each term to its meaning.",
+  "pairs": [
+    { "id": "p1", "prompt": "First term", "match": "Its definition" },
+    { "id": "p2", "prompt": "Second term", "match": "Its different definition" }
+  ],
+  "explanation": "Why each pair belongs together."
 }
 ```

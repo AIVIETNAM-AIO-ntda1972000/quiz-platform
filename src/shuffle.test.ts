@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { exampleQuizFile } from "./exampleQuiz";
-import type { Attempt } from "./models";
-import { createSeededRandom, displayOptions, displayQuestions, newShuffleSeed, shuffleItems } from "./shuffle";
+import type { Attempt, MatchingQuestion } from "./models";
+import { createSeededRandom, displayMatches, displayOptions, displayQuestions, newShuffleSeed, shuffleItems } from "./shuffle";
 
 function attemptWith(seed: number | undefined): Attempt {
   return { quizId: "basic-math", answers: {}, currentIndex: 0, updatedAt: "now", shuffleSeed: seed };
@@ -79,5 +79,39 @@ describe("shuffle", () => {
     }
     expect(seen.size).toBeGreaterThan(1);
     expect([...seen].every((order) => order.split(",").sort().join(",") === "a,b,c")).toBe(true);
+  });
+
+  it("shuffles only the right-hand column of a matching question", () => {
+    const matching: MatchingQuestion = {
+      id: "m1",
+      type: "matching",
+      prompt: "Match each term to its meaning.",
+      pairs: [
+        { id: "p1", prompt: "Weight", match: "A learned number" },
+        { id: "p2", prompt: "Loss", match: "A measure of prediction error" },
+        { id: "p3", prompt: "Optimizer", match: "Adjusts the weights" },
+        { id: "p4", prompt: "Layer", match: "Transforms its inputs" },
+      ],
+    };
+
+    expect(displayMatches(matching, attemptWith(undefined), 0)).toEqual(matching.pairs.map((pair) => pair.match));
+    expect(displayOptions(matching, attemptWith(7), 0)).toEqual([]);
+
+    const authored = matching.pairs.map((pair) => pair.match).join("|");
+    const orders = new Set<string>();
+    for (let seed = 0; seed < 25; seed += 1) {
+      const matches = displayMatches(matching, attemptWith(seed), 0);
+      expect(matches).toHaveLength(matching.pairs.length);
+      expect([...matches].sort()).toEqual([...matching.pairs.map((pair) => pair.match)].sort());
+      orders.add(matches.join("|"));
+    }
+    expect(orders.size).toBeGreaterThan(1);
+    expect([...orders].some((order) => order !== authored)).toBe(true);
+  });
+
+  it("returns no matches for a question that is not a matching question", () => {
+    const [single] = exampleQuizFile.quiz.questions;
+    if (single.type !== "singleChoice") throw new Error("The starter quiz changed unexpectedly");
+    expect(displayMatches(single, attemptWith(3), 0)).toEqual([]);
   });
 });
