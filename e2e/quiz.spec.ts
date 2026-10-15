@@ -15,6 +15,7 @@ type QuizFixture = {
       correctOptionId?: string;
       correctOptionIds?: string[];
       acceptedAnswers?: string[];
+      pairs?: Array<{ id: string; prompt: string; match: string }>;
     }>;
   };
 };
@@ -26,6 +27,14 @@ async function answerCurrentQuestion(page: import("@playwright/test").Page, fixt
   if (!question) throw new Error(`The fixture has no question with the prompt: ${prompt}`);
   if (question.type === "shortText") {
     await page.getByLabel("Your answer").fill(question.acceptedAnswers![0]);
+    return;
+  }
+  if (question.type === "matching") {
+    const rows = page.locator(".matching-row");
+    await expect(rows).toHaveCount(question.pairs!.length);
+    for (const [index, pair] of question.pairs!.entries()) {
+      await rows.nth(index).getByRole("combobox").selectOption({ label: pair.match });
+    }
     return;
   }
   const correctIds = question.type === "singleChoice" ? [question.correctOptionId!] : question.correctOptionIds!;
@@ -200,14 +209,22 @@ test("reuses a reading passage across questions, review, and offline reload", as
   await expect(page.getByRole("dialog")).toContainText("city planners often drained wetlands");
 });
 
-test("offers exactly two downloadable starting-point examples", async ({ page }) => {
+test("offers two downloadable examples and a click-to-copy AI prompt", async ({ page, context }) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await page.goto("/");
   await page.getByRole("button", { name: "Import quiz" }).click();
   const exampleLinks = page.locator(".resource-actions a[download]");
-  await expect(exampleLinks).toHaveText(["Quiz example", "Reading material example", "AI prompt", "Rich AI prompt"]);
+  await expect(exampleLinks).toHaveText(["Quiz example", "Reading material example"]);
   await expect(exampleLinks.first()).toHaveAttribute("href", "/examples/basic-math.json");
   await expect(exampleLinks.nth(1)).toHaveAttribute("href", "/examples/rich-reading.json");
-  await expect(page.getByRole("link", { name: "Reading example" })).toHaveCount(0);
+  await expect(page.locator('.resource-actions a[href$=".md"]')).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Copy AI prompt" }).click();
+  await expect(page.getByRole("status")).toContainText("Prompt copied");
+  const copied = await page.evaluate(() => navigator.clipboard.readText());
+  expect(copied).toContain('Topic: "Describe what you want to learn"');
+  expect(copied).not.toContain("[TOPIC]");
+  expect(copied).toContain('"schemaVersion"');
 
   await page.locator('input[type="file"]').setInputFiles({
     name: "rich-reading.json",
@@ -310,12 +327,14 @@ test("renders rich reading offline, restores position, and reveals answers only 
   await answerCurrentQuestion(page, richQuiz);
   await page.getByRole("button", { name: /Next question/ }).click();
   await answerCurrentQuestion(page, richQuiz);
+  await page.getByRole("button", { name: /Next question/ }).click();
+  await answerCurrentQuestion(page, richQuiz);
   await page.getByRole("button", { name: "Finish quiz" }).click();
   await expect(page.getByText("100%")).toBeVisible();
   await expect(page.getByText("Correct answer:")).toHaveCount(0);
   await expect(page.getByText("The passage says weights are learned from examples rather than written by hand.")).toHaveCount(0);
   await page.getByRole("button", { name: "Show answers" }).click();
-  await expect(page.getByText("Correct answer:")).toHaveCount(3);
+  await expect(page.getByText("Correct answer:")).toHaveCount(4);
   await page.getByRole("button", { name: "Hide answers" }).click();
   await expect(page.getByText("Correct answer:")).toHaveCount(0);
   await page.getByRole("button", { name: "Back to library" }).click();

@@ -34,8 +34,8 @@ Plugin availability depends on the user's ChatGPT account, workspace policy, cli
 
 ## Universal JSON workflow
 
-1. Open [`public/AI_PROMPT.md`](../public/AI_PROMPT.md).
-2. Replace `[TOPIC]` and `[LEVEL]`, then send the prompt to any chatbot.
+1. On Quiz Platform's **Import quiz** screen, select **Copy AI prompt** (or use **Download the prompt file**, which is the same text as [`public/AI_PROMPT.txt`](../public/AI_PROMPT.txt)).
+2. Replace the quoted text on the `Topic:` line, remove the `Level:` line if it is not needed, then send the prompt to any chatbot.
 3. Copy only the returned JSON.
 4. In Quiz Platform, open **Import quiz**, paste the response, and select **Import pasted JSON**.
 5. Review any field-level errors. If the quiz ID already exists, confirm replacement in the app.
@@ -197,4 +197,4 @@ Accept, reject, or delete at least one pending draft. The server permits at most
 
 # Rich reading quizzes
 
-Connected clients may submit `schemaVersion: 2` quizzes with Markdown passages and embedded image assets, and `schemaVersion: 3` quizzes that also contain a `matching` question. A teaching document can be linked from the library with `learningMaterial: { "passageId": "lesson" }`, reusing a passage without repeating its content. Clients must run `get_quiz_instructions` and `validate_quiz` before `publish_quiz`. The 1 MiB MCP payload limit still applies. Version 2 sync requires the existing `supabase/migrations/20260930_rich_sync.sql` migration; neither the linked-document form nor the matching question type needs an additional database migration. For a universal non-MCP fallback, use `public/AI_RICH_PROMPT.md` and paste the resulting JSON.
+Connected clients may submit `schemaVersion: 2` quizzes with Markdown passages and embedded image assets, and `schemaVersion: 3` quizzes that also contain a `matching` question. A teaching document can be linked from the library with `learningMaterial: { "passageId": "lesson" }`, reusing a passage without repeating its content. Clients must run `get_quiz_instructions` and `validate_quiz` before `publish_quiz`. The 1 MiB MCP payload limit still applies. Version 2 sync requires the existing `supabase/migrations/20260930_rich_sync.sql` migration; neither the linked-document form nor the matching question type needs an additional database migration. For a universal non-MCP fallback, use **Copy AI prompt** on the import screen and paste the resulting JSON.
