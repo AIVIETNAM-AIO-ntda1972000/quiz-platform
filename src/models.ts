@@ -94,6 +94,8 @@ export type Attempt = {
   answers: Record<string, Answer>;
   currentIndex: number;
   updatedAt: string;
+  /** Seed for the attempt's question and choice order. Absent on attempts saved by older builds. */
+  shuffleSeed?: number;
 };
 export type QuizResult = {
   quizId: string;

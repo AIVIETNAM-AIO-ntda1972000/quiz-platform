@@ -1,6 +1,6 @@
 # Quiz JSON format
 
-Each file contains exactly one quiz. Use `schemaVersion: 1` for the original plain-text contract or `schemaVersion: 2` for Markdown passages. See [`public/examples/basic-math.json`](../public/examples/basic-math.json) for a general example, [`public/examples/reading-practice.json`](../public/examples/reading-practice.json) for a plain shared passage, and [`public/examples/rich-reading.json`](../public/examples/rich-reading.json) for a Markdown passage.
+Each file contains exactly one quiz. Use `schemaVersion: 1` for the original plain-text contract or `schemaVersion: 2` for Markdown passages. See [`public/examples/basic-math.json`](../public/examples/basic-math.json) for a general quiz example and [`public/examples/rich-reading.json`](../public/examples/rich-reading.json) for a Markdown reading-material example. Both appear on the import screen under **Need a starting point?**. A plain shared-passage file used by the test suite is kept at [`sample-quizzes/plain-reading-practice.json`](../sample-quizzes/plain-reading-practice.json).
 
 The same contract and validator apply to every creation path:
 
@@ -176,6 +176,17 @@ To create rich material with AI, use [`public/AI_RICH_PROMPT.md`](../public/AI_R
 On Windows PowerShell, `[Convert]::ToBase64String([IO.File]::ReadAllBytes('diagram.png'))` produces the `base64` value for a local PNG file. Use the corresponding MIME type and a unique asset ID. The app will reject a file whose actual bytes do not match the declared type.
 
 Reading position is kept only on the current device and is cleared if the quiz is replaced or deleted. On results, correct answers and explanations are initially hidden behind **Show answers**; score, your response, and correctness remain visible.
+
+## Randomized attempt order
+
+The order of `questions` and of each question's `options` is randomized every time a learner starts an attempt, so a learner cannot pass by memorizing the position of an answer. **Try again** draws a new order. The order is bound to the attempt: leaving the quiz, reloading the page, or resuming on the same device keeps the same order, while a new attempt reshuffles it.
+
+Authoring rules:
+
+- Write `options` in a natural order anyway. It is the source of truth for review and for anything that reads the stored attempt.
+- Correct answers are matched by `id`, never by position, so shuffling cannot change grading.
+- The displayed choice letter is the on-screen position, not the option `id`.
+- `shortText` questions and short-text answers are never randomized.
 
 ## Question types
 
