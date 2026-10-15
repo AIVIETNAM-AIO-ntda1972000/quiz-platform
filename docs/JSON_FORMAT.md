@@ -1,6 +1,6 @@
 # Quiz JSON format
 
-Each file contains exactly one quiz. Use `schemaVersion: 1` for the original plain-text contract or `schemaVersion: 2` for Markdown passages. See [`public/examples/basic-math.json`](../public/examples/basic-math.json) for a general quiz example and [`public/examples/rich-reading.json`](../public/examples/rich-reading.json) for a Markdown reading-material example. Both appear on the import screen under **Need a starting point?**. A plain shared-passage file used by the test suite is kept at [`sample-quizzes/plain-reading-practice.json`](../sample-quizzes/plain-reading-practice.json).
+Each file contains exactly one quiz. Use `schemaVersion: 1` for the original plain-text contract, `schemaVersion: 2` for Markdown passages, or `schemaVersion: 3` when the quiz needs a matching question. See [`public/examples/basic-math.json`](../public/examples/basic-math.json) for a general quiz example and [`public/examples/rich-reading.json`](../public/examples/rich-reading.json) for a Markdown reading-material example. Both appear on the import screen under **Need a starting point?**. A plain shared-passage file used by the test suite is kept at [`sample-quizzes/plain-reading-practice.json`](../sample-quizzes/plain-reading-practice.json).
 
 The same contract and validator apply to every creation path:
 
@@ -187,11 +187,28 @@ Authoring rules:
 - Correct answers are matched by `id`, never by position, so shuffling cannot change grading.
 - The displayed choice letter is the on-screen position, not the option `id`.
 - `shortText` questions and short-text answers are never randomized.
+- A matching question randomizes only its right-hand column; the left-hand prompts keep the authored `pairs` order.
 
 ## Question types
 
 - `singleChoice`: at least two `options` and one `correctOptionId` that references an option.
 - `multipleChoice`: at least two `options` and one or more unique `correctOptionIds`. The learner must select the exact correct set.
 - `shortText`: one or more `acceptedAnswers`. Matching ignores case, surrounding whitespace, repeated internal whitespace, and Unicode presentation differences, but preserves accents.
+- `matching`: two to twelve `pairs`. Each pair needs a unique `id`, a non-empty `prompt`, and a non-empty `match`.
+
+```json
+{
+  "id": "q4",
+  "type": "matching",
+  "prompt": "Match each term to its meaning.",
+  "pairs": [
+    { "id": "p1", "prompt": "Weight", "match": "A learned number that scales an input" },
+    { "id": "p2", "prompt": "Loss", "match": "A measure of prediction error" }
+  ],
+  "explanation": "Weights are learned from examples; the loss scores each prediction."
+}
+```
+
+`matching` requires `schemaVersion: 3`. The learner picks one answer for each prompt from a dropdown, and the question counts as correct only when every row is paired correctly. Correct pairs are matched by pair `id`, so the shuffled right-hand column cannot change grading. Two pairs may not share the same `match` text, because a dropdown with two identical labels would be ambiguous.
 
 The importer validates the whole file before saving it. Re-importing the same quiz ID asks before replacing the quiz and clearing its saved progress.

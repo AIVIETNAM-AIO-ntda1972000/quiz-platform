@@ -308,6 +308,14 @@ h1:focus { outline: none; }
 .choice.selected .choice-key { color: var(--on-accent); background: var(--blue); }
 .text-answer { display: grid; gap: 0.6rem; margin-top: 2.5rem; color: var(--muted); font-size: 0.9rem; font-weight: 750; }
 .text-answer input { width: 100%; min-height: 58px; padding: 0 1rem; border: 1px solid var(--line); border-radius: 14px; color: var(--ink); background: var(--surface); font-size: 1rem; }
+.matching-list { display: grid; gap: 0.75rem; margin: 2.5rem 0 0; padding: 0; border: 0; }
+.matching-hint { margin: 0 0 0.5rem; color: var(--muted); font-size: 0.9rem; font-weight: 750; }
+.matching-row { display: grid; grid-template-columns: 1fr; gap: 0.6rem; min-height: 68px; padding: 0.75rem 1rem; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
+.matching-prompt { font-weight: 800; }
+.matching-row select { width: 100%; min-height: 46px; padding: 0 0.75rem; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); background: var(--surface); font: inherit; }
+@media (min-width: 620px) {
+  .matching-row { grid-template-columns: 1fr 1fr; align-items: center; gap: 1rem; }
+}
 .attempt-actions, .result-actions { display: flex; justify-content: space-between; gap: 1rem; margin-top: 3rem; }
 
 .score-card { display: grid; grid-template-columns: auto 1fr; gap: 2rem; align-items: center; padding: 2rem; border-radius: 24px; color: var(--on-accent); background: linear-gradient(135deg, var(--indigo), var(--score-secondary)); box-shadow: 0 22px 60px var(--shadow-hero); }

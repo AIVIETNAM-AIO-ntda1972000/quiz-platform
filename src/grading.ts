@@ -10,6 +10,10 @@ export function isCorrect(question: Question, answer: Answer | undefined): boole
     const normalized = normalizeText(answer);
     return normalized.length > 0 && question.acceptedAnswers.some((accepted) => normalizeText(accepted) === normalized);
   }
+  if (question.type === "matching") {
+    if (!Array.isArray(answer) || answer.length !== question.pairs.length) return false;
+    return question.pairs.every((pair, index) => answer[index] === pair.id);
+  }
   if (question.type === "singleChoice") return typeof answer === "string" && answer === question.correctOptionId;
   if (!Array.isArray(answer)) return false;
   const selected = [...new Set(answer)].sort();

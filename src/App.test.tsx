@@ -138,6 +138,75 @@ describe("Quiz Platform", () => {
     expect(screen.getByRole("button", { name: "Start Lesson Quiz" })).toBeInTheDocument();
   });
 
+  it("imports a matching quiz, pairs it, and grades every row", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: "Import quiz" }));
+    await user.click(screen.getByLabelText("Paste a chatbot response"));
+    await user.paste(JSON.stringify({
+      schemaVersion: 3,
+      quiz: {
+        id: "matching-quiz",
+        title: "Matching Quiz",
+        questions: [
+          {
+            id: "m1",
+            type: "matching",
+            prompt: "Match each term to its meaning.",
+            pairs: [
+              { id: "p1", prompt: "Weight", match: "A learned number" },
+              { id: "p2", prompt: "Loss", match: "A measure of prediction error" },
+            ],
+            explanation: "Weights are learned from examples; loss measures error.",
+          },
+          { id: "q1", type: "shortText", prompt: "Ready?", acceptedAnswers: ["yes"] },
+        ],
+      },
+    }));
+    await user.click(screen.getByRole("button", { name: "Validate and import" }));
+    await user.click(screen.getByRole("button", { name: "Start Matching Quiz" }));
+
+    const shownPrompt = () => document.querySelector(".question-panel h1")?.textContent ?? "";
+    const matchingPrompt = "Match each term to its meaning.";
+    const shortTextPrompt = "Ready?";
+    const waitForQuestion = () => waitFor(() => {
+      const prompt = shownPrompt();
+      if (prompt !== matchingPrompt && prompt !== shortTextPrompt) throw new Error(`Unexpected question on screen: ${prompt}`);
+      return prompt;
+    });
+    const answerMatching = async () => {
+      const selects = screen.getAllByRole("combobox");
+      expect(selects).toHaveLength(2);
+      await user.selectOptions(selects[0], "A learned number");
+      await user.selectOptions(selects[1], "A measure of prediction error");
+    };
+    const answerShortText = async () => {
+      await user.type(screen.getByLabelText("Your answer"), "yes");
+    };
+    const next = async () => {
+      await user.click(screen.getByRole("button", { name: /Next question/ }));
+    };
+
+    // The attempt order is shuffled, so answer whichever question is actually shown first.
+    if (await waitForQuestion() === matchingPrompt) {
+      await answerMatching();
+      await next();
+      await waitForQuestion();
+      await answerShortText();
+    } else {
+      await answerShortText();
+      await next();
+      await waitForQuestion();
+      await answerMatching();
+    }
+    await user.click(screen.getByRole("button", { name: "Finish quiz" }));
+
+    expect(screen.getByText("100%")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Show answers" }));
+    expect(screen.getAllByText(/Weight → A learned number/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Loss → A measure of prediction error/).length).toBeGreaterThan(0);
+  });
+
   it("validates and imports JSON pasted from a chatbot", async () => {
     const user = userEvent.setup();
     render(<App />);
