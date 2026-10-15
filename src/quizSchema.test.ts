@@ -5,8 +5,12 @@ import richExample from "../public/examples/rich-reading.json";
 import decisionTreeQuiz from "../sample-quizzes/decision-tree-practical-work.json";
 import vietnameseAiQuiz from "../sample-quizzes/kien-thuc-ai-co-ban.json";
 import { exampleQuizFile } from "./exampleQuiz";
-import type { MarkdownReadingPassage } from "./models";
+import type { MarkdownReadingPassage, MatchingQuestion } from "./models";
 import { parseQuizJson, validateQuizFile } from "./quizSchema";
+
+function matchingQuestionQuiz(questions: MatchingQuestion[] | Array<Record<string, unknown>>) {
+  return { schemaVersion: 3, quiz: { id: "matching-quiz", title: "Matching quiz", questions } };
+}
 
 describe("quiz validation", () => {
   it("accepts the included practical decision-tree quiz", () => {
@@ -85,7 +89,70 @@ describe("quiz validation", () => {
     const oversized = `${JSON.stringify(richExample)}${" ".repeat(1_048_576)}`;
     const result = parseQuizJson(oversized);
     expect(result.success).toBe(false);
-    if (!result.success) expect(result.errors).toContain("file: Version 2 quiz exceeds the 1 MiB JSON limit");
+    if (!result.success) expect(result.errors).toContain("file: The quiz exceeds the 1 MiB JSON limit");
+  });
+
+  it("accepts a matching question in schema version 3", () => {
+    const matchingQuiz = matchingQuestionQuiz([
+      {
+        id: "m1",
+        type: "matching",
+        prompt: "Match each term to its meaning.",
+        pairs: [
+          { id: "p1", prompt: "Weight", match: "A learned number" },
+          { id: "p2", prompt: "Loss", match: "A measure of prediction error" },
+        ],
+        explanation: "Weights are learned; loss measures error.",
+      },
+      { id: "q1", type: "shortText", prompt: "Ready?", acceptedAnswers: ["yes"] },
+    ]);
+    const result = validateQuizFile(matchingQuiz);
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.quiz.questions[0].type).toBe("matching");
+  });
+
+  it("rejects duplicate matching pair ids and duplicate match values", () => {
+    const invalid = matchingQuestionQuiz([{
+      id: "m1",
+      type: "matching",
+      prompt: "Match each term to its meaning.",
+      pairs: [
+        { id: "p1", prompt: "Weight", match: "Same text" },
+        { id: "p1", prompt: "Loss", match: "same text" },
+      ],
+    }]);
+    const result = validateQuizFile(invalid);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.errors).toContain("quiz.questions.0.pairs.1.id: Duplicate matching pair id: p1");
+      expect(result.errors).toContain("quiz.questions.0.pairs.1.match: Duplicate matching answer: same text");
+    }
+  });
+
+  it("requires at least two matching pairs", () => {
+    const result = validateQuizFile(matchingQuestionQuiz([{
+      id: "m1",
+      type: "matching",
+      prompt: "Match one term.",
+      pairs: [{ id: "p1", prompt: "Weight", match: "A learned number" }],
+    }]));
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.errors.some((error) => error.includes("at least two matching pairs"))).toBe(true);
+  });
+
+  it("limits a version 3 JSON file that contains a matching question", () => {
+    const oversized = `${JSON.stringify(matchingQuestionQuiz([{
+      id: "m1",
+      type: "matching",
+      prompt: "Match each term to its meaning.",
+      pairs: [
+        { id: "p1", prompt: "Weight", match: "A learned number" },
+        { id: "p2", prompt: "Loss", match: "A measure of prediction error" },
+      ],
+    }]))}${" ".repeat(1_048_576)}`;
+    const result = parseQuizJson(oversized);
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.errors).toContain("file: The quiz exceeds the 1 MiB JSON limit");
   });
 
   it.each([

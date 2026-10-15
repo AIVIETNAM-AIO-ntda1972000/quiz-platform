@@ -60,6 +60,28 @@ describe("quiz MCP core", () => {
     if (!result.success) expect(result.errors.some((error) => error.includes("embedded asset"))).toBe(true);
   });
 
+  it("accepts a matching question through the remote MCP validator", () => {
+    const result = validateMcpQuiz({
+      schemaVersion: 3,
+      quiz: {
+        id: "matching-quiz",
+        title: "Matching quiz",
+        questions: [
+          {
+            id: "q1",
+            type: "matching",
+            prompt: "Match each term to its meaning.",
+            pairs: [
+              { id: "p1", prompt: "Term A", match: "Meaning A" },
+              { id: "p2", prompt: "Term B", match: "Meaning B" },
+            ],
+          },
+        ],
+      },
+    });
+    expect(result.success).toBe(true);
+  });
+
   it("rejects payloads over the request limit", () => {
     const result = validateMcpQuiz({ value: "x".repeat(MAX_QUIZ_PAYLOAD_BYTES) });
     expect(result.success).toBe(false);

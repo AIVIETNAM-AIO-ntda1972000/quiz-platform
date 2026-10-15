@@ -48,6 +48,26 @@ async function completeQuiz(page: import("@playwright/test").Page, fixture: Quiz
   throw new Error("The quiz never reached its last question");
 }
 
+const matchingQuiz = {
+  schemaVersion: 3,
+  quiz: {
+    id: "matching-e2e",
+    title: "Matching Check",
+    questions: [
+      {
+        id: "q1",
+        type: "matching",
+        prompt: "Match each term to its meaning.",
+        pairs: [
+          { id: "p1", prompt: "Weight", match: "A learned number" },
+          { id: "p2", prompt: "Loss", match: "A measure of prediction error" },
+        ],
+        explanation: "Weights are learned from examples; loss measures error.",
+      },
+    ],
+  },
+};
+
 const importedQuiz = {
   schemaVersion: 1,
   quiz: {
@@ -104,6 +124,29 @@ test("imports, completes, reloads, and starts offline", async ({ page, context }
   await expect(page.getByText("What will you learn today?")).toBeVisible();
   await page.getByRole("button", { name: "Learning material for Offline Check" }).click();
   await expect(page.getByRole("heading", { name: "Offline Study Guide" })).toBeVisible();
+});
+
+test("imports and completes a matching question", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Import quiz" }).click();
+  await page.getByLabel("Choose a JSON file").setInputFiles({
+    name: "matching.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(JSON.stringify(matchingQuiz)),
+  });
+  await page.getByRole("button", { name: "Start Matching Check" }).click();
+  await expect(page.locator(".question-panel .eyebrow")).toHaveText("MATCH EACH ITEM");
+
+  const rows = page.locator(".matching-row");
+  await expect(rows).toHaveCount(2);
+  await rows.nth(0).getByRole("combobox").selectOption({ label: "A learned number" });
+  await rows.nth(1).getByRole("combobox").selectOption({ label: "A measure of prediction error" });
+  await page.getByRole("button", { name: "Finish quiz" }).click();
+
+  await expect(page.getByText("100%")).toBeVisible();
+  await page.getByRole("button", { name: "Show answers" }).click();
+  await expect(page.getByText("Weight → A learned number").first()).toBeVisible();
+  await expect(page.getByText(/Weights are learned from examples/)).toBeVisible();
 });
 
 test("imports and renders the illustrated decision-tree guide", async ({ page }) => {
