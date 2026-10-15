@@ -1,0 +1,108 @@
+Create a quiz for me. Return one valid JSON object only: no Markdown fences, no
+comments, no explanation before or after it, no external URLs, and no properties
+that are not shown below.
+
+Topic: "Describe what you want to learn"
+Level: "Optional: the learner's level, for example beginner or exam practice"
+
+Rules:
+
+- Start the JSON with "schemaVersion": 1 for plain questions only; use 2 when any
+  passage is Markdown or "learningMaterial" points at a passage; use 3 when the quiz
+  contains a matching question. Use the lowest version that fits.
+- Every quiz needs a unique "id", a "title", and at least one question.
+- Question types:
+  - singleChoice: "options" with at least two entries plus one "correctOptionId".
+  - multipleChoice: "options" with at least two entries plus unique "correctOptionIds".
+  - shortText: one or more "acceptedAnswers"; matching ignores case and extra spaces.
+  - matching: two to twelve "pairs", each with a unique "id", a left-hand "prompt",
+    and its own "match". Every "match" value must be different.
+- Every id must be unique: quiz, questions, options, matching pairs, passages, and
+  learning sections.
+- Keep every "explanation" short and educational.
+
+Reading and teaching material:
+
+- To teach a topic, add structured "learningMaterial" with three to six "sections".
+  Each section needs a unique "id", a "title", one to eight "paragraphs", and may
+  add "keyPoints" and one "illustration".
+- Illustration types: "flow" for two to eight ordered steps, "comparison" for two
+  to six alternatives, and "distribution" for two to six groups of labeled counts.
+- To write a longer document instead, put it in "passages" and add
+  "learningMaterial": { "passageId": "your-passage-id" } so the learner can open it
+  from the quiz library.
+- A passage is either plain: "id", "title", "paragraphs"; or Markdown: "id",
+  "title", "format": "markdown", "content".
+- In Markdown content use headings, lists, tables, links, fenced code, $...$ and
+  $$...$$ for math, and fenced mermaid blocks for flowcharts, sequence, class,
+  state, or ER diagrams. Do not use raw HTML, scripts, MDX, or unsupported diagram
+  types.
+- For reading-comprehension questions, write each source text once in "passages"
+  and give every question that uses it the same "passageId". Never repeat the
+  whole passage inside a question prompt.
+- Images must be real PNG, JPEG, or WebP files embedded in the passage as "assets"
+  and referenced as ![alt text](quiz-asset:asset-id). Do not invent image data and
+  do not link to external images.
+- Keep each Markdown passage under 100 KiB, each image under 256 KiB, all images
+  under 512 KiB, and the whole JSON file under 1 MiB.
+
+Use this shape, replacing the placeholder text with real teaching content:
+
+{
+  "schemaVersion": 3,
+  "quiz": {
+    "id": "topic-level",
+    "title": "Quiz title",
+    "description": "One-sentence description",
+    "learningMaterial": { "passageId": "lesson" },
+    "passages": [
+      {
+        "id": "lesson",
+        "title": "Lesson title",
+        "format": "markdown",
+        "content": "# Heading\n\nA useful explanation.\n\n| Term | Meaning |\n| --- | --- |\n| First | What it means |"
+      }
+    ],
+    "questions": [
+      {
+        "id": "q1",
+        "type": "singleChoice",
+        "passageId": "lesson",
+        "prompt": "Choose one answer.",
+        "options": [{ "id": "a", "text": "Answer A" }, { "id": "b", "text": "Answer B" }],
+        "correctOptionId": "a",
+        "explanation": "Why answer A is correct."
+      },
+      {
+        "id": "q2",
+        "type": "multipleChoice",
+        "passageId": "lesson",
+        "prompt": "Choose every correct answer.",
+        "options": [{ "id": "a", "text": "Answer A" }, { "id": "b", "text": "Answer B" }, { "id": "c", "text": "Answer C" }],
+        "correctOptionIds": ["a", "c"],
+        "explanation": "Why A and C form the exact correct set."
+      },
+      {
+        "id": "q3",
+        "type": "shortText",
+        "passageId": "lesson",
+        "prompt": "Type the short answer.",
+        "acceptedAnswers": ["Expected answer", "Accepted alternative"],
+        "explanation": "Why this answer is correct."
+      },
+      {
+        "id": "q4",
+        "type": "matching",
+        "prompt": "Match each term to its meaning.",
+        "pairs": [
+          { "id": "p1", "prompt": "First term", "match": "Its definition" },
+          { "id": "p2", "prompt": "Second term", "match": "Its different definition" }
+        ],
+        "explanation": "Why each pair belongs together."
+      }
+    ]
+  }
+}
+
+Respond with the JSON object itself. Do not wrap it in Markdown fences and do not
+add any text before or after it.

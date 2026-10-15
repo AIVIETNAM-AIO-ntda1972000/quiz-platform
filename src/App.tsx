@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { aiPromptText, copyAiPrompt } from "./aiPrompt";
 import { isCloudConfigured, useCloudSync } from "./cloudSync";
 import { exampleQuizFile } from "./exampleQuiz";
 import { gradeQuiz, isCorrect } from "./grading";
@@ -61,11 +62,33 @@ export default function App() {
   const [inboxError, setInboxError] = useState("");
   const [pastedJson, setPastedJson] = useState("");
   const [notice, setNotice] = useState("");
+  const [promptStatus, setPromptStatus] = useState<"idle" | "copied" | "failed">("idle");
   const [searchQuery, setSearchQuery] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [theme, setTheme] = useState<Theme>(resolveTheme);
   const headingRef = useRef<HTMLHeadingElement>(null);
+  const promptStatusTimer = useRef<number | undefined>(undefined);
+
+  useEffect(() => () => window.clearTimeout(promptStatusTimer.current), []);
+
+  const handleCopyPrompt = async () => {
+    const copied = await copyAiPrompt();
+    setPromptStatus(copied ? "copied" : "failed");
+    window.clearTimeout(promptStatusTimer.current);
+    promptStatusTimer.current = window.setTimeout(() => setPromptStatus("idle"), 3000);
+  };
+
+  const handleDownloadPrompt = () => {
+    const url = URL.createObjectURL(new Blob([aiPromptText], { type: "text/plain;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "AI_PROMPT.txt";
+    document.body.append(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
 
   const refreshLibrary = useCallback(() => setQuizzes(loadQuizzes()), []);
   const cloud = useCloudSync(refreshLibrary);
@@ -455,12 +478,22 @@ export default function App() {
             </div>
           )}
           <div className="resource-row">
-            <div><strong>Need a starting point?</strong><span>Download an example or use the AI prompt.</span></div>
+            <div>
+              <strong>Need a starting point?</strong>
+              <span>Download one of the two examples, or copy the AI prompt and change its topic line.</span>
+            </div>
             <div className="resource-actions">
               <a href={`${import.meta.env.BASE_URL}examples/basic-math.json`} download>Quiz example</a>
               <a href={`${import.meta.env.BASE_URL}examples/rich-reading.json`} download>Reading material example</a>
-              <a href={`${import.meta.env.BASE_URL}AI_PROMPT.md`} download>AI prompt</a>
-              <a href={`${import.meta.env.BASE_URL}AI_RICH_PROMPT.md`} download>Rich AI prompt</a>
+              <button className="study-button" type="button" onClick={() => void handleCopyPrompt()}>Copy AI prompt</button>
+              <button className="back-link resource-download" type="button" onClick={handleDownloadPrompt}>Download the prompt file</button>
+              <span className="resource-status" role="status" aria-live="polite">
+                {promptStatus === "copied"
+                  ? "Prompt copied. Paste it into your chatbot and replace the topic line."
+                  : promptStatus === "failed"
+                    ? "Copying is not available here. Use “Download the prompt file” instead."
+                    : ""}
+              </span>
             </div>
           </div>
         </main>

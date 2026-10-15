@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import readingExample from "../sample-quizzes/plain-reading-practice.json";
+import { aiPromptText } from "./aiPrompt";
 import { exampleQuizFile } from "./exampleQuiz";
 import type { Quiz } from "./models";
 import { saveQuiz } from "./storage";
@@ -55,6 +56,8 @@ describe("Quiz Platform", () => {
     document.head.innerHTML = '<meta name="theme-color" content="#171c5b">';
     vi.restoreAllMocks();
     Object.defineProperty(document, "modelContext", { configurable: true, value: undefined });
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: undefined });
+    Reflect.deleteProperty(document, "execCommand");
   });
 
   it("applies and remembers a manually selected theme", async () => {
@@ -205,6 +208,31 @@ describe("Quiz Platform", () => {
     await user.click(screen.getByRole("button", { name: "Show answers" }));
     expect(screen.getAllByText(/Weight → A learned number/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Loss → A measure of prediction error/).length).toBeGreaterThan(0);
+  });
+
+  it("copies the AI prompt and offers a download fallback", async () => {
+    const user = userEvent.setup();
+    // userEvent.setup() installs its own clipboard stub, so replace it afterwards.
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: "Import quiz" }));
+
+    await user.click(screen.getByRole("button", { name: "Copy AI prompt" }));
+    expect(writeText).toHaveBeenCalledWith(aiPromptText);
+    expect(await screen.findByText(/Prompt copied/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Download the prompt file" })).toBeInTheDocument();
+  });
+
+  it("reports a failed copy and points at the download fallback", async () => {
+    const user = userEvent.setup();
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: undefined });
+    Object.defineProperty(document, "execCommand", { configurable: true, value: vi.fn().mockReturnValue(false) });
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: "Import quiz" }));
+
+    await user.click(screen.getByRole("button", { name: "Copy AI prompt" }));
+    expect(await screen.findByText(/Copying is not available here/)).toBeInTheDocument();
   });
 
   it("validates and imports JSON pasted from a chatbot", async () => {

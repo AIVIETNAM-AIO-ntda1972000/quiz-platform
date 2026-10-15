@@ -1,9 +1,9 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "quiz": {
     "id": "neural-network-reading",
     "title": "Reading Practice: A Small Neural Network",
-    "description": "Read an illustrated Markdown lesson, then answer three questions.",
+    "description": "Read an illustrated Markdown lesson, then answer four questions of four different types.",
     "learningMaterial": { "passageId": "network-guide" },
     "passages": [
       {
@@ -46,6 +46,18 @@
         "prompt": "What component uses the loss to adjust weights?",
         "acceptedAnswers": ["optimizer", "an optimizer"],
         "explanation": "An optimizer adjusts the weights using information from the loss."
+      },
+      {
+        "id": "q4",
+        "type": "matching",
+        "passageId": "network-guide",
+        "prompt": "Match each term to what the passage says about it.",
+        "pairs": [
+          { "id": "p1", "prompt": "Weight", "match": "A learned number that scales an input" },
+          { "id": "p2", "prompt": "Loss", "match": "A measure of the difference between prediction and target" },
+          { "id": "p3", "prompt": "Validation set", "match": "Data used to check performance on new examples" }
+        ],
+        "explanation": "The passage defines each term and warns that low training loss does not prove good performance on new data."
       }
     ]
   }

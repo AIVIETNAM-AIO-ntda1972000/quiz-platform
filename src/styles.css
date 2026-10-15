@@ -190,6 +190,9 @@ h1:focus { outline: none; }
 .resource-row span { color: var(--muted); font-size: 0.9rem; }
 .resource-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 1rem; }
 .resource-actions a { color: var(--accent-text); font-weight: 800; }
+.resource-actions .study-button { font-size: 0.95rem; }
+.resource-download { margin: 0; font-size: 0.9rem; text-decoration: underline; }
+.resource-status { color: var(--accent-text); }
 
 .account-panel { display: grid; gap: 1rem; margin-top: 2rem; padding: 1.5rem; border: 1px solid var(--line); border-radius: 20px; background: var(--surface); box-shadow: 0 18px 50px var(--shadow-card); }
 .account-panel h2, .account-panel p { margin: 0; }
